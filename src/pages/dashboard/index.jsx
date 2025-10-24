@@ -39,7 +39,7 @@ const DashboardPage = () => {
     try {
       // Axios automatically stringifies the object and sets the correct headers
       const response = await axios.post(
-        "https://api.example.com/ideas",
+        "http://127.0.0.1:8000/stories",
         newIdea
       );
 
@@ -71,7 +71,7 @@ const DashboardPage = () => {
   const fetchIdeas = async () => {
     try {
       // Replace with your actual backend endpoint
-      const response = await axios.get("https://api.example.com/ideas");
+      const response = await axios.get("http://127.0.0.1:8000/stories");
 
       const ideas = response.data;
 
