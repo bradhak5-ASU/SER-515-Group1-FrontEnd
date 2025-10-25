@@ -40,7 +40,12 @@ const DashboardPage = () => {
       // Axios automatically stringifies the object and sets the correct headers
       const response = await axios.post(
         "http://127.0.0.1:8000/stories",
-        newIdea
+        {
+        title: newIdea.title,
+        description: newIdea.description,
+        assigne: "Balaji",
+        status: "Proposed",
+      }
       );
 
       // Axios puts the response data directly in the `data` property
@@ -74,6 +79,7 @@ const DashboardPage = () => {
       const response = await axios.get("http://127.0.0.1:8000/stories");
 
       const ideas = response.data;
+      console.log("idea",ideas);
 
       // Create a fresh board state
       const newBoard = JSON.parse(JSON.stringify(initialColumns));
