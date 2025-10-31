@@ -1,3 +1,3 @@
-# SER-515-Group1-FrontEnd
+# SER515-Group1-Frontend-Repo
 
-SER-515 Group1 FrontEnd - Prototype
+
