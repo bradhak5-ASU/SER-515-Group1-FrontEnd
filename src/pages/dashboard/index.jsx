@@ -7,6 +7,57 @@ import { Modal } from "@/components/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import NewIdeaForm from "@/components/forms/NewIdeaForm";
+
+const handleSaveIdea = async () => {
+  const payload = {
+    title: newIdea.title,
+    description: newIdea.description,
+    assigne: newIdea.assignee || "Balaji",
+    status: "Proposed",
+    tags: newIdea.tags,
+  };
+
+  console.log("[SAVE] Entered handleSaveIdea");
+  console.log("[SAVE] Payload to send:", payload);
+
+  try {
+    console.log("[SAVE] About to POST to http://127.0.0.1:8000/stories");
+    const response = await axios.post("http://127.0.0.1:8000/stories", payload, {
+      headers: { "Content-Type": "application/json" },
+      timeout: 15000,
+    });
+
+    console.log("[SAVE] POST response:", response.status, response.data);
+
+    const savedIdea = response.data;
+
+    setColumnData((prev) =>
+      prev.map((col) =>
+        col.title === "Proposed"
+          ? { ...col, tasks: [...col.tasks, savedIdea] }
+          : col
+      )
+    );
+
+    setIsModalOpen(false);
+  } catch (err) {
+    // Log everything possible
+    console.error("[SAVE][ERROR] err:", err);
+    console.error("[SAVE][ERROR] err.message:", err?.message);
+    console.error("[SAVE][ERROR] err.response:", err?.response);
+    console.error("[SAVE][ERROR] err.request:", err?.request);
+
+    alert(
+      err?.response?.data?.message ||
+        err?.message ||
+        "Failed to save idea. See console for details."
+    );
+  }
+};
+
+
+
 
 const initialColumns = [
   {
@@ -26,14 +77,19 @@ const initialColumns = [
 ];
 
 const DashboardPage = () => {
-  const [newIdea, setNewIdea] = useState({ title: "", description: "" });
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const [newIdea, setNewIdea] = useState({
+title: "",
+description: "",
+assignee: "",
+tags: [],
+});  
+const [isModalOpen, setIsModalOpen] = useState(false);
   const [columnData, setColumnData] = useState(initialColumns);
 
-  const handleOpenCreateModal = () => {
-    setNewIdea({ title: "", description: "" });
-    setIsModalOpen(true);
-  };
+ const handleOpenCreateModal = () => {
+  setNewIdea({ title: "", description: "", assignee: "", tags: [] });
+  setIsModalOpen(true);
+};
 
   const handleSaveIdea = async () => {
     try {
@@ -102,6 +158,11 @@ const DashboardPage = () => {
     fetchIdeas();
   }, []);
 
+const isFormValid =
+  newIdea.title.trim() !== "" &&
+  newIdea.description.trim() !== "" &&
+  newIdea.assignee.trim() !== "";
+
   return (
     <div className="flex flex-col h-screen bg-white">
       <Header onCreateIdeaClick={handleOpenCreateModal} />
@@ -128,41 +189,26 @@ const DashboardPage = () => {
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveIdea}>Save Idea</Button>
+                <Button onClick={() => { 
+                  console.log("[UI] Save clicked", {
+                    title: newIdea.title,
+                    description: newIdea.description,
+                    assignee: newIdea.assignee,
+                    tags: newIdea.tags,
+                    isFormValid,
+                  });
+                  handleSaveIdea();
+                }}
+                disabled={!isFormValid}
+                >
+                  Save Idea
+                  </Button>
+
             </>
           }
         >
-          {/* This is the content inside the modal */}
-          <div className="grid gap-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="idea-title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="idea-title"
-                placeholder="Enter the title"
-                className="col-span-3"
-                value={newIdea.title}
-                onChange={(e) =>
-                  setNewIdea({ ...newIdea, title: e.target.value })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Input
-                id="description"
-                placeholder="Describe the new idea"
-                className="col-span-3"
-                value={newIdea.description}
-                onChange={(e) =>
-                  setNewIdea({ ...newIdea, description: e.target.value })
-                }
-              />
-            </div>
-          </div>
+              <NewIdeaForm newIdea={newIdea} setNewIdea={setNewIdea} />
+
         </Modal>
       )}
     </div>
