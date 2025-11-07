@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import axios from "axios";
 
 // Import the necessary ShadCN UI components
 import { Button } from "@/components/ui/button";
@@ -17,6 +18,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { UserCircle2 } from "lucide-react";
 
 const LoginPage = ({ type }) => {
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [rePassword, setRePassword] = useState("");
+
   const handleRememberMe = (checked) => {
     if (checked) {
       // Logic to remember the user (e.g., set a cookie or local storage)
@@ -24,6 +29,39 @@ const LoginPage = ({ type }) => {
       // Logic to forget the user
     }
   };
+
+  const handleLoginSignup = async () => {
+    const formData = {
+      email: email,
+      password: password,
+    };
+
+    try {
+      if (type === "login") {
+        // Call login API
+        const loginFormData = new FormData();
+        loginFormData.append("username", email);
+        loginFormData.append("password", password);
+        const response = await axios.post(
+          `${import.meta.env.VITE_BASE_URL}/token`,
+          loginFormData
+        );
+        console.log("response:", response);
+        window.location.href = "/dashboard";
+      } else {
+        // Call signup API
+        const response = await axios.post(
+          `${import.meta.env.VITE_BASE_URL}/users`,
+          formData
+        );
+        console.log("response:", response);
+        window.location.href = "/login";
+      }
+    } catch (error) {
+      console.error("Error during login/signup:", error);
+    }
+  };
+
   return (
     <div className="flex items-center justify-center min-h-screen">
       <Card className="w-full max-w-sm mx-auto shadow-[0_0_100px_rgba(0,0,0,0.25)]">
@@ -63,7 +101,13 @@ const LoginPage = ({ type }) => {
 
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="Enter Your Email" />
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter Your Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
             </div>
 
             <div className="space-y-2">
@@ -74,6 +118,8 @@ const LoginPage = ({ type }) => {
                 id="password"
                 type="password"
                 placeholder="Enter Your Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
               />
             </div>
 
@@ -84,6 +130,8 @@ const LoginPage = ({ type }) => {
                   id="rePassword"
                   type="password"
                   placeholder="Re-Enter Your Password"
+                  value={rePassword}
+                  onChange={(e) => setRePassword(e.target.value)}
                 />
               </div>
             )}
@@ -101,7 +149,10 @@ const LoginPage = ({ type }) => {
               </div>
             ) : null}
 
-            <Button className="w-full bg-black text-white hover:bg-gray-800">
+            <Button
+              className="w-full bg-black text-white hover:bg-gray-800"
+              onClick={handleLoginSignup}
+            >
               {type === "login" ? "Log In" : "Sign Up"}
             </Button>
           </div>
