@@ -9,7 +9,9 @@ export function Header({ onCreateIdeaClick }) {
         <h1 className="text-xl font-semibold">Project Board</h1>
       </div>
       <div className="flex items-center space-x-2">
-        <Button onClick={onCreateIdeaClick}>+ Create Idea</Button>
+        <Button onClick={() => onCreateIdeaClick("Proposed")}>
+          + Create Idea
+        </Button>
         <Button variant="outline" size="icon">
           <Settings className="w-5 h-5" />
         </Button>

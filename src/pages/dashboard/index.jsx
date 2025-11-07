@@ -1,14 +1,13 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { Header } from "@/components/layout/Header";
-import { SearchBar } from "@/components/SearchBar";
-import { TaskColumn } from "@/components/Task/TaskColumn";
+
 import { Modal } from "@/components/Modal";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { SearchBar } from "@/components/SearchBar";
+import { Header } from "@/components/layout/Header";
+import { TaskColumn } from "@/components/Task/TaskColumn";
+
 import NewIdeaForm from "@/components/forms/NewIdeaForm";
-import NewTaskForm from "@/components/forms/NewTaskForm";
 
 const initialColumns = [
   {
@@ -18,7 +17,8 @@ const initialColumns = [
       {
         id: "1",
         title: "Implement User Authentication",
-        description: "Develop and integrate user login, registration, and session management.",
+        description:
+          "Develop and integrate user login, registration, and session management.",
         assigne: "Balaji",
         status: "Proposed",
         tags: ["Backend", "Security"],
@@ -26,7 +26,8 @@ const initialColumns = [
       {
         id: "2",
         title: "Design Database Schema",
-        description: "Create the database schema for users, tasks, and projects.",
+        description:
+          "Create the database schema for users, tasks, and projects.",
         assigne: "Rahul",
         status: "Proposed",
         tags: ["Backend", "Database"],
@@ -34,7 +35,8 @@ const initialColumns = [
       {
         id: "3",
         title: "Set up Project Structure",
-        description: "Initialize the frontend and backend repositories with basic folder structures.",
+        description:
+          "Initialize the frontend and backend repositories with basic folder structures.",
         assigne: "Charith",
         status: "Proposed",
         tags: ["Frontend", "Backend"],
@@ -48,7 +50,8 @@ const initialColumns = [
       {
         id: "4",
         title: "API Documentation",
-        description: "Create comprehensive API documentation for all endpoints.",
+        description:
+          "Create comprehensive API documentation for all endpoints.",
         assigne: "Akshat",
         status: "Needs Refinement",
         tags: ["Backend", "Research"],
@@ -84,7 +87,8 @@ const initialColumns = [
       {
         id: "7",
         title: "Code Review System",
-        description: "Set up automated code review process with GitHub Actions.",
+        description:
+          "Set up automated code review process with GitHub Actions.",
         assigne: "Charith",
         status: "Ready To Commit",
         tags: ["DevOps", "Testing"],
@@ -92,7 +96,8 @@ const initialColumns = [
       {
         id: "8",
         title: "Error Handling",
-        description: "Implement comprehensive error handling across the application.",
+        description:
+          "Implement comprehensive error handling across the application.",
         assigne: "Akshat",
         status: "Ready To Commit",
         tags: ["Backend", "Bug"],
@@ -114,7 +119,8 @@ const initialColumns = [
       {
         id: "10",
         title: "Database Connection",
-        description: "Established connection between backend and PostgreSQL database.",
+        description:
+          "Established connection between backend and PostgreSQL database.",
         assigne: "Rahul",
         status: "Sprint Ready",
         tags: ["Backend", "Database"],
@@ -131,122 +137,98 @@ const initialColumns = [
   },
 ];
 
+const dummyTeamMembers = [
+  {
+    id: 1,
+    name: "Akshat",
+    role: "Developer",
+  },
+  {
+    id: 2,
+    name: "Balaji",
+    role: "Developer",
+  },
+  {
+    id: 3,
+    name: "Charith",
+    role: "Developer",
+  },
+  {
+    id: 4,
+    name: "Rahul",
+    role: "Developer",
+  },
+  {
+    id: 5,
+    name: "Vishesh",
+    role: "Developer",
+  },
+];
+
 const DashboardPage = () => {
-const [newIdea, setNewIdea] = useState({
-title: "",
-description: "",
-assignee: "",
-tags: [],
-});  
-const [isModalOpen, setIsModalOpen] = useState(false);
-const [newTask, setNewTask] = useState({
-  title: "",
-  description: "",
-  tags: [],
-});
-const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
-const [selectedColumn, setSelectedColumn] = useState("");
+  const [teamMembers, setTeamMembers] = useState([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedColumn, setSelectedColumn] = useState("");
   const [columnData, setColumnData] = useState(initialColumns);
+  const [newIdea, setNewIdea] = useState({
+    title: "",
+    description: "",
+    assignee: "",
+    tags: [],
+  });
 
- const handleOpenCreateModal = () => {
-  setNewIdea({ title: "", description: "", assignee: "", tags: [] });
-  setIsModalOpen(true);
-};
-
-const handleOpenCreateTaskModal = (columnTitle) => {
-  setNewTask({ title: "", description: "", tags: [] });
-  setSelectedColumn(columnTitle);
-  setIsTaskModalOpen(true);
-};
-
-const handleSaveTask = async () => {
-  try {
-    const response = await axios.post(
-      "http://127.0.0.1:8000/stories",
-      {
-        title: newTask.title,
-        description: newTask.description,
-        assigne: "Balaji",
-        status: selectedColumn,
-        tags: newTask.tags || [],
-      }
-    );
-
-    const savedTask = response.data;
-
-    // Update the UI on success - add task to the selected column
-    setColumnData((prevColumns) => {
-      return prevColumns.map((col) =>
-        col.title === selectedColumn
-          ? { ...col, tasks: [...col.tasks, savedTask] }
-          : col
-      );
-    });
-
-    setIsTaskModalOpen(false);
-    setNewTask({ title: "", description: "", tags: [] });
-  } catch (err) {
-    if (err.response && err.response.data && err.response.data.message) {
-      console.error(err.response.data.message);
-      alert(err.response.data.message);
-    } else {
-      console.error("An unexpected error occurred. Please try again.");
-      alert("Failed to save task. Please try again.");
-    }
-  }
-};
+  const handleOpenCreateModal = (columnTitle) => {
+    setNewIdea({ title: "", description: "", assignee: "", tags: [] });
+    setSelectedColumn(columnTitle);
+    setIsModalOpen(true);
+  };
 
   const handleSaveIdea = async () => {
     try {
-      // Axios automatically stringifies the object and sets the correct headers
-      const response = await axios.post(
-        "http://127.0.0.1:8000/stories",
+      const { data } = await axios.post(
+        `${import.meta.env.VITE_BASE_URL}/stories`,
         {
-        title: newIdea.title,
-        description: newIdea.description,
-        assigne: "Balaji",
-        status: "Proposed",
-      }
+          title: newIdea.title,
+          description: newIdea.description,
+          assigne: newIdea.assignee,
+          tags: newIdea.tags || [],
+          status: selectedColumn || "Proposed",
+        }
       );
 
-      // Axios puts the response data directly in the `data` property
-      const savedIdea = response.data;
-
-      // Update the UI on success (same as before)
       setColumnData((prevColumns) => {
-        const newColumns = [...prevColumns];
-        const proposedColumn = newColumns.find(
-          (col) => col.title === "Proposed"
+        return prevColumns.map((col) =>
+          col.title === selectedColumn
+            ? { ...col, tasks: [...col.tasks, data?.story] }
+            : col
         );
-        if (proposedColumn) {
-          proposedColumn.tasks.push(savedIdea);
-        }
-        return newColumns;
       });
 
       setIsModalOpen(false);
+      setNewIdea({
+        title: "",
+        description: "",
+        assignee: "",
+        tags: [],
+      });
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
         console.error(err.response.data.message);
+        alert(err.response.data.message);
       } else {
         console.error("An unexpected error occurred. Please try again.");
+        alert("Failed to save idea. Please try again.");
       }
     }
   };
 
   const fetchIdeas = async () => {
     try {
-      // Replace with your actual backend endpoint
-      const response = await axios.get("http://127.0.0.1:8000/stories");
+      const { data } = await axios.get("http://127.0.0.1:8000/stories");
 
-      const ideas = response.data;
-      console.log("idea",ideas);
-
-      // Create a fresh board state
       const newBoard = JSON.parse(JSON.stringify(initialColumns));
 
-      // Distribute the fetched ideas into the correct columns
-      ideas.forEach((idea) => {
+      data.forEach((idea) => {
         const column = newBoard.find((col) => col.title === idea.status);
         if (column) {
           column.tasks.push(idea);
@@ -256,34 +238,55 @@ const handleSaveTask = async () => {
       setColumnData(newBoard);
     } catch (err) {
       console.error("Failed to load ideas. Please try again later.", err);
+      alert("Failed to load ideas. Please try again later.");
     }
   };
 
+  const IdeaFormFooter = () => (
+    <>
+      <Button variant="outline" onClick={() => setIsModalOpen(false)}>
+        Cancel
+      </Button>
+      <Button
+        onClick={() => {
+          console.log("[UI] Save clicked", {
+            title: newIdea.title,
+            description: newIdea.description,
+            assignee: newIdea.assignee,
+            tags: newIdea.tags,
+            isFormValid,
+          });
+          handleSaveIdea();
+        }}
+        disabled={!isFormValid}
+      >
+        Save Idea
+      </Button>
+    </>
+  );
+
+  const isFormValid =
+    newIdea.title.trim() !== "" &&
+    newIdea.description.trim() !== "" &&
+    newIdea.assignee.trim() !== "";
+
   useEffect(() => {
     fetchIdeas();
+    setTeamMembers(dummyTeamMembers);
   }, []);
-
-const isFormValid =
-  newIdea.title.trim() !== "" &&
-  newIdea.description.trim() !== "" &&
-  newIdea.assignee.trim() !== "";
-
-const isTaskFormValid =
-  newTask.title.trim() !== "" &&
-  newTask.description.trim() !== "";
 
   return (
     <div className="flex flex-col h-screen bg-white">
       <Header onCreateIdeaClick={handleOpenCreateModal} />
       <SearchBar />
       <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
-        {columnData.map((column) => (
+        {columnData.map((column, index) => (
           <TaskColumn
-            key={column.title}
+            key={`${column.title}-${index}`}
             title={column.title}
             dotColor={column.dotColor}
             tasks={column.tasks}
-            onAddTask={handleOpenCreateTaskModal}
+            onAddTask={handleOpenCreateModal}
           />
         ))}
       </section>
@@ -294,55 +297,13 @@ const isTaskFormValid =
           onClose={() => setIsModalOpen(false)}
           title="Create New Idea"
           description="Fill in the details for your new idea. Click save when you're done."
-          footer={
-            <>
-              <Button variant="outline" onClick={() => setIsModalOpen(false)}>
-                Cancel
-              </Button>
-                <Button onClick={() => { 
-                  console.log("[UI] Save clicked", {
-                    title: newIdea.title,
-                    description: newIdea.description,
-                    assignee: newIdea.assignee,
-                    tags: newIdea.tags,
-                    isFormValid,
-                  });
-                  handleSaveIdea();
-                }}
-                disabled={!isFormValid}
-                >
-                  Save Idea
-                  </Button>
-
-            </>
-          }
+          footer={<IdeaFormFooter />}
         >
-              <NewIdeaForm newIdea={newIdea} setNewIdea={setNewIdea} />
-
-        </Modal>
-      )}
-
-      {isTaskModalOpen && (
-        <Modal
-          isOpen={isTaskModalOpen}
-          onClose={() => setIsTaskModalOpen(false)}
-          title="Create New Task"
-          description="Fill in the details for your new task. Click save when you're done."
-          footer={
-            <>
-              <Button variant="outline" onClick={() => setIsTaskModalOpen(false)}>
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleSaveTask}
-                disabled={!isTaskFormValid}
-              >
-                Save Task
-              </Button>
-            </>
-          }
-        >
-          <NewTaskForm newTask={newTask} setNewTask={setNewTask} />
+          <NewIdeaForm
+            newIdea={newIdea}
+            setNewIdea={setNewIdea}
+            teamMembers={teamMembers}
+          />
         </Modal>
       )}
     </div>

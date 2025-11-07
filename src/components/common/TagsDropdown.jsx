@@ -1,20 +1,26 @@
-import React, { useState, useEffect, useRef } from "react";
-import { Input } from "@/components/ui/input";
+import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 
-const TagsDropdown = ({ newTask, setNewTask }) => {
+const TagsDropdown = ({ newIdea, setNewIdea }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
 
-  const options = ["Frontend", "Backend", "Research", "Refactor", "Bug", "Testing"];
-  const selected = Array.isArray(newTask.tags) ? newTask.tags : [];
+  const options = [
+    "Frontend",
+    "Backend",
+    "Research",
+    "Refactor",
+    "Bug",
+    "Testing",
+  ];
+  const selected = Array.isArray(newIdea.tags) ? newIdea.tags : [];
   const hasSelection = selected.length > 0;
 
   const toggleTag = (tag) => {
     const next = selected.includes(tag)
       ? selected.filter((t) => t !== tag)
       : [...selected, tag];
-    setNewTask({ ...newTask, tags: next });
+    setNewIdea({ ...newIdea, tags: next });
   };
 
   useEffect(() => {
@@ -38,7 +44,11 @@ const TagsDropdown = ({ newTask, setNewTask }) => {
           onClick={() => setIsOpen((o) => !o)}
           className={`h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-left text-sm
                       focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-                      ${hasSelection ? "text-foreground" : "text-muted-foreground"}`}
+                      ${
+                        hasSelection
+                          ? "text-foreground"
+                          : "text-muted-foreground"
+                      }`}
         >
           {hasSelection ? selected.join(", ") : "Select one or more tags"}
         </button>
@@ -46,11 +56,11 @@ const TagsDropdown = ({ newTask, setNewTask }) => {
         {isOpen && (
           <div className="absolute z-50 mt-2 w-full rounded-md border bg-popover p-2 shadow-md">
             <div className="max-h-56 overflow-auto pr-1">
-              {options.map((tag) => {
+              {options.map((tag, index) => {
                 const checked = selected.includes(tag);
                 return (
                   <label
-                    key={tag}
+                    key={`${tag}-${index}`}
                     className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 hover:bg-accent"
                   >
                     <input
@@ -68,7 +78,7 @@ const TagsDropdown = ({ newTask, setNewTask }) => {
             <div className="mt-2 flex items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={() => setNewTask({ ...newTask, tags: [] })}
+                onClick={() => setNewIdea({ ...newIdea, tags: [] })}
                 className="text-xs text-muted-foreground hover:underline"
               >
                 Clear
@@ -88,43 +98,4 @@ const TagsDropdown = ({ newTask, setNewTask }) => {
   );
 };
 
-const NewTaskForm = ({ newTask, setNewTask }) => {
-  return (
-    <div className="grid gap-4">
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="task-title" className="text-right">
-          Title
-        </Label>
-        <Input
-          id="task-title"
-          placeholder="Enter the title"
-          className="col-span-3"
-          value={newTask.title}
-          onChange={(e) =>
-            setNewTask({ ...newTask, title: e.target.value })
-          }
-        />
-      </div>
-
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="task-description" className="text-right">
-          Description
-        </Label>
-        <Input
-          id="task-description"
-          placeholder="Describe the task"
-          className="col-span-3"
-          value={newTask.description}
-          onChange={(e) =>
-            setNewTask({ ...newTask, description: e.target.value })
-          }
-        />
-      </div>
-
-      <TagsDropdown newTask={newTask} setNewTask={setNewTask} />
-    </div>
-  );
-};
-
-export default NewTaskForm;
-
+export default TagsDropdown;
