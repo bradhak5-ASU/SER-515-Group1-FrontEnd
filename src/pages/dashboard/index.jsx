@@ -39,6 +39,62 @@ const initialColumns = [
         status: "Proposed",
         tags: ["Frontend", "Backend"],
       },
+      {
+        id: "12",
+        title: "Configure CI/CD Pipeline",
+        description: "Set up continuous integration and deployment workflows using GitHub Actions.",
+        assigne: "Akshat",
+        status: "Proposed",
+        tags: ["DevOps", "CI/CD"],
+      },
+      {
+        id: "13",
+        title: "Create API Endpoints",
+        description: "Develop RESTful API endpoints for user management and task operations.",
+        assigne: "Balaji",
+        status: "Proposed",
+        tags: ["Backend", "API"],
+      },
+      {
+        id: "14",
+        title: "Implement State Management",
+        description: "Set up Redux or Context API for global state management in the frontend.",
+        assigne: "Charith",
+        status: "Proposed",
+        tags: ["Frontend", "State"],
+      },
+      {
+        id: "15",
+        title: "Add Unit Tests",
+        description: "Write comprehensive unit tests for critical components and functions.",
+        assigne: "Rahul",
+        status: "Proposed",
+        tags: ["Testing", "Quality"],
+      },
+      {
+        id: "16",
+        title: "Design User Interface",
+        description: "Create wireframes and mockups for the main dashboard and task management views.",
+        assigne: "Vishesh",
+        status: "Proposed",
+        tags: ["UI/UX", "Design"],
+      },
+      {
+        id: "17",
+        title: "Set up Authentication Middleware",
+        description: "Implement JWT-based authentication middleware for protected routes.",
+        assigne: "Akshat",
+        status: "Proposed",
+        tags: ["Backend", "Security"],
+      },
+      {
+        id: "18",
+        title: "Create Task Filtering System",
+        description: "Implement filtering and sorting functionality for tasks by status, assignee, and tags.",
+        assigne: "Balaji",
+        status: "Proposed",
+        tags: ["Frontend", "Features"],
+      },
     ],
   },
   {
@@ -142,7 +198,8 @@ const [isModalOpen, setIsModalOpen] = useState(false);
 const [newTask, setNewTask] = useState({
   title: "",
   description: "",
-  tags: [],
+  assignee: "",
+  tags: "",
 });
 const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
 const [selectedColumn, setSelectedColumn] = useState("");
@@ -154,7 +211,7 @@ const [selectedColumn, setSelectedColumn] = useState("");
 };
 
 const handleOpenCreateTaskModal = (columnTitle) => {
-  setNewTask({ title: "", description: "", tags: [] });
+  setNewTask({ title: "", description: "", assignee: "", tags: "" });
   setSelectedColumn(columnTitle);
   setIsTaskModalOpen(true);
 };
@@ -166,9 +223,9 @@ const handleSaveTask = async () => {
       {
         title: newTask.title,
         description: newTask.description,
-        assigne: "Balaji",
+        assigne: newTask.assignee,
         status: selectedColumn,
-        tags: newTask.tags || [],
+        tags: newTask.tags || "",
       }
     );
 
@@ -184,7 +241,7 @@ const handleSaveTask = async () => {
     });
 
     setIsTaskModalOpen(false);
-    setNewTask({ title: "", description: "", tags: [] });
+    setNewTask({ title: "", description: "", assignee: "", tags: "" });
   } catch (err) {
     if (err.response && err.response.data && err.response.data.message) {
       console.error(err.response.data.message);
@@ -270,23 +327,34 @@ const isFormValid =
 
 const isTaskFormValid =
   newTask.title.trim() !== "" &&
-  newTask.description.trim() !== "";
+  newTask.description.trim() !== "" &&
+  newTask.assignee.trim() !== "";
 
   return (
-    <div className="flex flex-col h-screen bg-white">
-      <Header onCreateIdeaClick={handleOpenCreateModal} />
-      <SearchBar />
-      <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
-        {columnData.map((column) => (
-          <TaskColumn
-            key={column.title}
-            title={column.title}
-            dotColor={column.dotColor}
-            tasks={column.tasks}
-            onAddTask={handleOpenCreateTaskModal}
-          />
-        ))}
-      </section>
+    <div className="flex flex-col h-screen bg-gray-50 overflow-hidden">
+      {/* Main Dashboard Container */}
+      <div className="flex flex-col h-full bg-white">
+        {/* Header - Fixed at top */}
+        <Header onCreateIdeaClick={handleOpenCreateModal} />
+        
+        {/* Search Bar - Fixed below header */}
+        <SearchBar />
+        
+        {/* Main Content Area - Scrollable columns */}
+        <main className="flex-1 overflow-x-auto overflow-y-hidden p-4 bg-gray-50">
+          <div className="flex gap-4 items-stretch h-full" style={{ width: 'max-content' }}>
+            {columnData.map((column) => (
+              <TaskColumn
+                key={column.title}
+                title={column.title}
+                dotColor={column.dotColor}
+                tasks={column.tasks}
+                onAddTask={handleOpenCreateTaskModal}
+              />
+            ))}
+          </div>
+        </main>
+      </div>
 
       {isModalOpen && (
         <Modal
