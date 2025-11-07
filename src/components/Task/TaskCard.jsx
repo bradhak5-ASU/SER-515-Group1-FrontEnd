@@ -59,8 +59,7 @@ export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
   };
 
   return (
-    // Increased card width and made borders more visible with darker color and stronger shadow
-    <div className="rounded-lg border-2 border-gray-300 bg-white text-card-foreground shadow-md hover:shadow-lg transition-shadow p-4 space-y-2 relative w-full">
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 space-y-2 relative">
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="text-xs font-semibold text-primary">{task?.title || "Task"}</div>
