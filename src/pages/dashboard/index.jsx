@@ -7,6 +7,8 @@ import { Modal } from "@/components/Modal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import NewIdeaForm from "@/components/forms/NewIdeaForm";
+import NewTaskForm from "@/components/forms/NewTaskForm";
 
 const initialColumns = [
   {
@@ -14,26 +16,185 @@ const initialColumns = [
     dotColor: "bg-gray-400",
     tasks: [
       {
-        title: "Sample Task",
-        description: "This is a sample task description.",
+        id: "1",
+        title: "Implement User Authentication",
+        description: "Develop and integrate user login, registration, and session management.",
+        assigne: "Balaji",
+        status: "Proposed",
+        tags: ["Backend", "Security"],
+      },
+      {
+        id: "2",
+        title: "Design Database Schema",
+        description: "Create the database schema for users, tasks, and projects.",
+        assigne: "Rahul",
+        status: "Proposed",
+        tags: ["Backend", "Database"],
+      },
+      {
+        id: "3",
+        title: "Set up Project Structure",
+        description: "Initialize the frontend and backend repositories with basic folder structures.",
+        assigne: "Charith",
+        status: "Proposed",
+        tags: ["Frontend", "Backend"],
       },
     ],
   },
-  { title: "Needs Refinement", dotColor: "bg-blue-500", tasks: [] },
-  { title: "In Refinement", dotColor: "bg-yellow-500", tasks: [] },
-  { title: "Ready To Commit", dotColor: "bg-purple-500", tasks: [] },
-  { title: "Sprint Ready", dotColor: "bg-green-500", tasks: [] },
+  {
+    title: "Needs Refinement",
+    dotColor: "bg-blue-500",
+    tasks: [
+      {
+        id: "4",
+        title: "API Documentation",
+        description: "Create comprehensive API documentation for all endpoints.",
+        assigne: "Akshat",
+        status: "Needs Refinement",
+        tags: ["Backend", "Research"],
+      },
+      {
+        id: "5",
+        title: "UI Component Library",
+        description: "Build reusable UI components for the dashboard.",
+        assigne: "Balaji",
+        status: "Needs Refinement",
+        tags: ["Frontend", "UI/UX"],
+      },
+    ],
+  },
+  {
+    title: "In Refinement",
+    dotColor: "bg-yellow-500",
+    tasks: [
+      {
+        id: "6",
+        title: "Task Management Features",
+        description: "Implement drag-and-drop functionality for task cards.",
+        assigne: "Rahul",
+        status: "In Refinement",
+        tags: ["Frontend", "Testing"],
+      },
+    ],
+  },
+  {
+    title: "Ready To Commit",
+    dotColor: "bg-purple-500",
+    tasks: [
+      {
+        id: "7",
+        title: "Code Review System",
+        description: "Set up automated code review process with GitHub Actions.",
+        assigne: "Charith",
+        status: "Ready To Commit",
+        tags: ["DevOps", "Testing"],
+      },
+      {
+        id: "8",
+        title: "Error Handling",
+        description: "Implement comprehensive error handling across the application.",
+        assigne: "Akshat",
+        status: "Ready To Commit",
+        tags: ["Backend", "Bug"],
+      },
+    ],
+  },
+  {
+    title: "Sprint Ready",
+    dotColor: "bg-green-500",
+    tasks: [
+      {
+        id: "9",
+        title: "Initial UI Mockups",
+        description: "Created wireframes and basic mockups for the dashboard.",
+        assigne: "Balaji",
+        status: "Sprint Ready",
+        tags: ["Frontend", "Research"],
+      },
+      {
+        id: "10",
+        title: "Database Connection",
+        description: "Established connection between backend and PostgreSQL database.",
+        assigne: "Rahul",
+        status: "Sprint Ready",
+        tags: ["Backend", "Database"],
+      },
+      {
+        id: "11",
+        title: "Frontend Routing",
+        description: "Implemented React Router for navigation between pages.",
+        assigne: "Charith",
+        status: "Sprint Ready",
+        tags: ["Frontend", "Refactor"],
+      },
+    ],
+  },
 ];
 
 const DashboardPage = () => {
-  const [newIdea, setNewIdea] = useState({ title: "", description: "" });
-  const [isModalOpen, setIsModalOpen] = useState(false);
+const [newIdea, setNewIdea] = useState({
+title: "",
+description: "",
+assignee: "",
+tags: [],
+});  
+const [isModalOpen, setIsModalOpen] = useState(false);
+const [newTask, setNewTask] = useState({
+  title: "",
+  description: "",
+  tags: [],
+});
+const [isTaskModalOpen, setIsTaskModalOpen] = useState(false);
+const [selectedColumn, setSelectedColumn] = useState("");
   const [columnData, setColumnData] = useState(initialColumns);
 
-  const handleOpenCreateModal = () => {
-    setNewIdea({ title: "", description: "" });
-    setIsModalOpen(true);
-  };
+ const handleOpenCreateModal = () => {
+  setNewIdea({ title: "", description: "", assignee: "", tags: [] });
+  setIsModalOpen(true);
+};
+
+const handleOpenCreateTaskModal = (columnTitle) => {
+  setNewTask({ title: "", description: "", tags: [] });
+  setSelectedColumn(columnTitle);
+  setIsTaskModalOpen(true);
+};
+
+const handleSaveTask = async () => {
+  try {
+    const response = await axios.post(
+      "http://127.0.0.1:8000/stories",
+      {
+        title: newTask.title,
+        description: newTask.description,
+        assigne: "Balaji",
+        status: selectedColumn,
+        tags: newTask.tags || [],
+      }
+    );
+
+    const savedTask = response.data;
+
+    // Update the UI on success - add task to the selected column
+    setColumnData((prevColumns) => {
+      return prevColumns.map((col) =>
+        col.title === selectedColumn
+          ? { ...col, tasks: [...col.tasks, savedTask] }
+          : col
+      );
+    });
+
+    setIsTaskModalOpen(false);
+    setNewTask({ title: "", description: "", tags: [] });
+  } catch (err) {
+    if (err.response && err.response.data && err.response.data.message) {
+      console.error(err.response.data.message);
+      alert(err.response.data.message);
+    } else {
+      console.error("An unexpected error occurred. Please try again.");
+      alert("Failed to save task. Please try again.");
+    }
+  }
+};
 
   const handleSaveIdea = async () => {
     try {
@@ -102,6 +263,15 @@ const DashboardPage = () => {
     fetchIdeas();
   }, []);
 
+const isFormValid =
+  newIdea.title.trim() !== "" &&
+  newIdea.description.trim() !== "" &&
+  newIdea.assignee.trim() !== "";
+
+const isTaskFormValid =
+  newTask.title.trim() !== "" &&
+  newTask.description.trim() !== "";
+
   return (
     <div className="flex flex-col h-screen bg-white">
       <Header onCreateIdeaClick={handleOpenCreateModal} />
@@ -113,6 +283,7 @@ const DashboardPage = () => {
             title={column.title}
             dotColor={column.dotColor}
             tasks={column.tasks}
+            onAddTask={handleOpenCreateTaskModal}
           />
         ))}
       </section>
@@ -128,41 +299,50 @@ const DashboardPage = () => {
               <Button variant="outline" onClick={() => setIsModalOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleSaveIdea}>Save Idea</Button>
+                <Button onClick={() => { 
+                  console.log("[UI] Save clicked", {
+                    title: newIdea.title,
+                    description: newIdea.description,
+                    assignee: newIdea.assignee,
+                    tags: newIdea.tags,
+                    isFormValid,
+                  });
+                  handleSaveIdea();
+                }}
+                disabled={!isFormValid}
+                >
+                  Save Idea
+                  </Button>
+
             </>
           }
         >
-          {/* This is the content inside the modal */}
-          <div className="grid gap-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="idea-title" className="text-right">
-                Title
-              </Label>
-              <Input
-                id="idea-title"
-                placeholder="Enter the title"
-                className="col-span-3"
-                value={newIdea.title}
-                onChange={(e) =>
-                  setNewIdea({ ...newIdea, title: e.target.value })
-                }
-              />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="description" className="text-right">
-                Description
-              </Label>
-              <Input
-                id="description"
-                placeholder="Describe the new idea"
-                className="col-span-3"
-                value={newIdea.description}
-                onChange={(e) =>
-                  setNewIdea({ ...newIdea, description: e.target.value })
-                }
-              />
-            </div>
-          </div>
+              <NewIdeaForm newIdea={newIdea} setNewIdea={setNewIdea} />
+
+        </Modal>
+      )}
+
+      {isTaskModalOpen && (
+        <Modal
+          isOpen={isTaskModalOpen}
+          onClose={() => setIsTaskModalOpen(false)}
+          title="Create New Task"
+          description="Fill in the details for your new task. Click save when you're done."
+          footer={
+            <>
+              <Button variant="outline" onClick={() => setIsTaskModalOpen(false)}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleSaveTask}
+                disabled={!isTaskFormValid}
+              >
+                Save Task
+              </Button>
+            </>
+          }
+        >
+          <NewTaskForm newTask={newTask} setNewTask={setNewTask} />
         </Modal>
       )}
     </div>
