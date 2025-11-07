@@ -7,7 +7,6 @@ export function Header({ onCreateIdeaClick }) {
     <header className="flex items-center justify-between p-4 border-b">
       <div className="flex items-center gap-2 cursor-pointer">
         <h1 className="text-xl font-semibold">Project Board</h1>
-        <ChevronDown className="w-5 h-5 text-muted-foreground" />
       </div>
       <div className="flex items-center space-x-2">
         <Button onClick={onCreateIdeaClick}>+ Create Idea</Button>
