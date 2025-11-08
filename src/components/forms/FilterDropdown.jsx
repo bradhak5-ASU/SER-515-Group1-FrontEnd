@@ -9,22 +9,15 @@ const ALL_STATUSES = [
   "Ready To Commit",
   "Sprint Ready",
 ];
-const ALL_ASSIGNEE= [
-  "Akshat",
-  "Balaji",
-  "Charith",
-  "Rahul",
-  "Vishesh",
+const ALL_ASSIGNEE = ["Akshat", "Balaji", "Charith", "Rahul", "Vishesh"];
+const ALL_TAGS = [
+  "Frontend",
+  "Backend",
+  "Research",
+  "Refactor",
+  "Bug",
+  "Testing",
 ];
-const ALL_TAGS= [
-"Frontend", 
-"Backend", 
-"Research", 
-"Refactor", 
-"Bug", 
-"Testing"
-];
-
 
 export function applyFilters(columns = [], filters) {
   if (!filters) return columns;
@@ -36,21 +29,24 @@ export function applyFilters(columns = [], filters) {
     const t = (task.title || "").toLowerCase();
     const d = (task.description || "").toLowerCase();
     const taskTags = Array.isArray(task.tags) ? task.tags : [];
-    const taskAssignee = task.assignee ?? task.assigne ?? "";
+    const taskAssignee = task.assignee ?? task.assignee ?? "";
 
     if (query && !(t.includes(query) || d.includes(query))) return false;
     if (assignees?.size && !assignees.has(String(taskAssignee))) return false;
-    if (tags?.size && ![...tags].every((tg) => taskTags.includes(tg))) return false;
+    if (tags?.size && ![...tags].every((tg) => taskTags.includes(tg)))
+      return false;
 
     return true;
   };
 
   return columns.map((col) => {
     const includeCol = !statuses?.size || statuses.has(col.title);
-    return { ...col, tasks: includeCol ? (col.tasks || []).filter(taskPasses) : [] };
+    return {
+      ...col,
+      tasks: includeCol ? (col.tasks || []).filter(taskPasses) : [],
+    };
   });
 }
-
 
 export default function FilterDropdown({ data = [], onApply }) {
   const [open, setOpen] = useState(false);
@@ -64,9 +60,11 @@ export default function FilterDropdown({ data = [], onApply }) {
     const t = new Set();
     data.forEach((col) => {
       (col.tasks || []).forEach((task) => {
-        const asg = task?.assignee ?? task?.assigne;
+        const asg = task?.assignee ?? task?.assignee;
         if (asg) a.add(String(asg));
-        (Array.isArray(task?.tags) ? task.tags : []).forEach((tg) => tg && t.add(String(tg)));
+        (Array.isArray(task?.tags) ? task.tags : []).forEach(
+          (tg) => tg && t.add(String(tg))
+        );
       });
     });
     return { assigneeOptions: [...a].sort(), tagOptions: [...t].sort() };
@@ -83,7 +81,12 @@ export default function FilterDropdown({ data = [], onApply }) {
     setStatuses(new Set());
     setAssignees(new Set());
     setTags(new Set());
-    onApply?.({ text: "", statuses: new Set(), assignees: new Set(), tags: new Set() });
+    onApply?.({
+      text: "",
+      statuses: new Set(),
+      assignees: new Set(),
+      tags: new Set(),
+    });
   };
 
   const apply = () => {
@@ -93,7 +96,11 @@ export default function FilterDropdown({ data = [], onApply }) {
 
   return (
     <div className="relative inline-block text-left">
-      <Button variant="outline" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
+      <Button
+        variant="outline"
+        onClick={() => setOpen((v) => !v)}
+        aria-expanded={open}
+      >
         Filter
       </Button>
 
@@ -113,7 +120,9 @@ export default function FilterDropdown({ data = [], onApply }) {
           </div>
 
           <div className="mb-4">
-            <div className="mb-2 text-xs font-semibold text-gray-500">Status</div>
+            <div className="mb-2 text-xs font-semibold text-gray-500">
+              Status
+            </div>
             <div className="grid grid-cols-2 gap-2">
               {ALL_STATUSES.map((s) => (
                 <label
@@ -133,7 +142,9 @@ export default function FilterDropdown({ data = [], onApply }) {
           </div>
 
           <div className="mb-4">
-            <div className="mb-2 text-xs font-semibold text-gray-500">Assignee</div>
+            <div className="mb-2 text-xs font-semibold text-gray-500">
+              Assignee
+            </div>
             <div className="grid grid-cols-2 gap-2">
               {ALL_ASSIGNEE.map((s) => (
                 <label
@@ -173,7 +184,10 @@ export default function FilterDropdown({ data = [], onApply }) {
           </div>
 
           <div className="flex items-center justify-between border-t pt-3">
-            <button onClick={clearAll} className="text-sm text-gray-600 underline">
+            <button
+              onClick={clearAll}
+              className="text-sm text-gray-600 underline"
+            >
               Clear all
             </button>
             <div className="space-x-2">

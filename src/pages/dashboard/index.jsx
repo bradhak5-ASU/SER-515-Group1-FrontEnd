@@ -19,7 +19,7 @@ const initialColumns = [
         title: "Implement User Authentication",
         description:
           "Develop and integrate user login, registration, and session management.",
-        assigne: "Balaji",
+        assignee: "Balaji",
         status: "Proposed",
         tags: ["Backend", "Security"],
       },
@@ -28,7 +28,7 @@ const initialColumns = [
         title: "Design Database Schema",
         description:
           "Create the database schema for users, tasks, and projects.",
-        assigne: "Rahul",
+        assignee: "Rahul",
         status: "Proposed",
         tags: ["Backend", "Database"],
       },
@@ -37,7 +37,7 @@ const initialColumns = [
         title: "Set up Project Structure",
         description:
           "Initialize the frontend and backend repositories with basic folder structures.",
-        assigne: "Charith",
+        assignee: "Charith",
         status: "Proposed",
         tags: ["Frontend", "Backend"],
       },
@@ -52,7 +52,7 @@ const initialColumns = [
         title: "API Documentation",
         description:
           "Create comprehensive API documentation for all endpoints.",
-        assigne: "Akshat",
+        assignee: "Akshat",
         status: "Needs Refinement",
         tags: ["Backend", "Research"],
       },
@@ -60,7 +60,7 @@ const initialColumns = [
         id: "5",
         title: "UI Component Library",
         description: "Build reusable UI components for the dashboard.",
-        assigne: "Balaji",
+        assignee: "Balaji",
         status: "Needs Refinement",
         tags: ["Frontend", "UI/UX"],
       },
@@ -74,7 +74,7 @@ const initialColumns = [
         id: "6",
         title: "Task Management Features",
         description: "Implement drag-and-drop functionality for task cards.",
-        assigne: "Rahul",
+        assignee: "Rahul",
         status: "In Refinement",
         tags: ["Frontend", "Testing"],
       },
@@ -89,7 +89,7 @@ const initialColumns = [
         title: "Code Review System",
         description:
           "Set up automated code review process with GitHub Actions.",
-        assigne: "Charith",
+        assignee: "Charith",
         status: "Ready To Commit",
         tags: ["DevOps", "Testing"],
       },
@@ -98,7 +98,7 @@ const initialColumns = [
         title: "Error Handling",
         description:
           "Implement comprehensive error handling across the application.",
-        assigne: "Akshat",
+        assignee: "Akshat",
         status: "Ready To Commit",
         tags: ["Backend", "Bug"],
       },
@@ -112,7 +112,7 @@ const initialColumns = [
         id: "9",
         title: "Initial UI Mockups",
         description: "Created wireframes and basic mockups for the dashboard.",
-        assigne: "Balaji",
+        assignee: "Balaji",
         status: "Sprint Ready",
         tags: ["Frontend", "Research"],
       },
@@ -121,7 +121,7 @@ const initialColumns = [
         title: "Database Connection",
         description:
           "Established connection between backend and PostgreSQL database.",
-        assigne: "Rahul",
+        assignee: "Rahul",
         status: "Sprint Ready",
         tags: ["Backend", "Database"],
       },
@@ -129,7 +129,7 @@ const initialColumns = [
         id: "11",
         title: "Frontend Routing",
         description: "Implemented React Router for navigation between pages.",
-        assigne: "Charith",
+        assignee: "Charith",
         status: "Sprint Ready",
         tags: ["Frontend", "Refactor"],
       },
@@ -190,7 +190,7 @@ const DashboardPage = () => {
         {
           title: newIdea.title,
           description: newIdea.description,
-          assigne: newIdea.assignee,
+          assignee: newIdea.assignee,
           tags: newIdea.tags || [],
           status: selectedColumn || "Proposed",
         }
