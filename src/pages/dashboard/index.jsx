@@ -170,6 +170,8 @@ const DashboardPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState("");
   const [columnData, setColumnData] = useState(initialColumns);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [newIdea, setNewIdea] = useState({
     title: "",
     description: "",
@@ -196,13 +198,8 @@ const DashboardPage = () => {
         }
       );
 
-      setColumnData((prevColumns) => {
-        return prevColumns.map((col) =>
-          col.title === selectedColumn
-            ? { ...col, tasks: [...col.tasks, data?.story] }
-            : col
-        );
-      });
+      // Refresh the dashboard data after successful creation
+      await fetchIdeas();
 
       setIsModalOpen(false);
       setNewIdea({
@@ -223,22 +220,46 @@ const DashboardPage = () => {
   };
 
   const fetchIdeas = async () => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const { data } = await axios.get("http://127.0.0.1:8000/stories");
+      const { data } = await axios.get(
+        `${import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000"}/stories`
+      );
 
       const newBoard = JSON.parse(JSON.stringify(initialColumns));
 
-      data.forEach((idea) => {
-        const column = newBoard.find((col) => col.title === idea.status);
-        if (column) {
-          column.tasks.push(idea);
-        }
+      // Clear existing tasks from initial columns
+      newBoard.forEach((col) => {
+        col.tasks = [];
       });
+
+      // Map API response to column tasks
+      if (data && Array.isArray(data)) {
+        data.forEach((idea) => {
+          const column = newBoard.find((col) => col.title === idea.status);
+          if (column) {
+            column.tasks.push({
+              id: idea.id,
+              title: idea.title,
+              description: idea.description || "",
+              assignee: idea.assignee || "Unassigned",
+              status: idea.status,
+              tags: idea.tags || [],
+            });
+          }
+        });
+      }
 
       setColumnData(newBoard);
     } catch (err) {
       console.error("Failed to load ideas. Please try again later.", err);
-      alert("Failed to load ideas. Please try again later.");
+      setError(
+        err.response?.data?.message ||
+          "Failed to load dashboard data. Please try again later."
+      );
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -279,17 +300,41 @@ const DashboardPage = () => {
     <div className="flex flex-col h-screen bg-white">
       <Header onCreateIdeaClick={handleOpenCreateModal} />
       <SearchBar />
-      <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
-        {columnData.map((column, index) => (
-          <TaskColumn
-            key={`${column.title}-${index}`}
-            title={column.title}
-            dotColor={column.dotColor}
-            tasks={column.tasks}
-            onAddTask={handleOpenCreateModal}
-          />
-        ))}
-      </section>
+      {isLoading ? (
+        <div className="flex flex-grow items-center justify-center">
+          <div className="flex flex-col items-center space-y-4">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-gray-900"></div>
+            <p className="text-gray-600">Loading dashboard...</p>
+          </div>
+        </div>
+      ) : error ? (
+        <div className="flex flex-grow items-center justify-center">
+          <div className="flex flex-col items-center space-y-4 p-8">
+            <div className="text-red-600 text-center">
+              <p className="text-lg font-semibold mb-2">Error loading dashboard</p>
+              <p className="text-sm">{error}</p>
+            </div>
+            <Button
+              onClick={fetchIdeas}
+              variant="outline"
+            >
+              Retry
+            </Button>
+          </div>
+        </div>
+      ) : (
+        <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
+          {columnData.map((column, index) => (
+            <TaskColumn
+              key={`${column.title}-${index}`}
+              title={column.title}
+              dotColor={column.dotColor}
+              tasks={column.tasks}
+              onAddTask={handleOpenCreateModal}
+            />
+          ))}
+        </section>
+      )}
 
       {isModalOpen && (
         <Modal
