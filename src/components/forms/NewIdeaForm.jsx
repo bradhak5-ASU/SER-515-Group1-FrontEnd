@@ -1,12 +1,11 @@
 // src/components/forms.jsx
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-
+import AssigneeDropdown from "@/components/common/AssigneeDropdown";
 import TagsDropdown from "@/components/common/TagsDropdown";
 
 const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
   teamMembers = [
-    { name: "Select an assignee", id: 0, role: "" },
     ...teamMembers,
   ];
 
@@ -40,30 +39,7 @@ const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
         />
       </div>
 
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="assignee" className="text-right">
-          Assignee
-        </Label>
-        <select
-          id="assignee"
-          className={`col-span-3 h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm
-                      ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
-                      disabled:cursor-not-allowed disabled:opacity-50
-                      ${
-                        newIdea.assignee
-                          ? "text-foreground"
-                          : "text-muted-foreground"
-                      }`}
-          value={newIdea.assignee ?? ""}
-          onChange={(e) => setNewIdea({ ...newIdea, assignee: e.target.value })}
-        >
-          {teamMembers.map((member, index) => (
-            <option key={`${member.id}-${index}`} value={member.name}>
-              {member.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <AssigneeDropdown newIdea={newIdea} setNewIdea={setNewIdea} teamMembers={teamMembers}/>
 
       <TagsDropdown newIdea={newIdea} setNewIdea={setNewIdea} />
     </div>
