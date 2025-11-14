@@ -7,7 +7,7 @@ import { SearchBar } from "@/components/SearchBar";
 import { Header } from "@/components/layout/Header";
 import { TaskColumn } from "@/components/Task/TaskColumn";
 
-import NewIdeaForm from "@/components/forms/NewIdeaForm";
+import NewTaskForm from "@/components/forms/NewTaskForm";
 
 const initialColumns = [
   {
@@ -172,7 +172,7 @@ const DashboardPage = () => {
   const [columnData, setColumnData] = useState(initialColumns);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [newIdea, setNewIdea] = useState({
+  const [newTask, setNewTask] = useState({
     title: "",
     description: "",
     assignee: "",
@@ -180,29 +180,40 @@ const DashboardPage = () => {
   });
 
   const handleOpenCreateModal = (columnTitle) => {
-    setNewIdea({ title: "", description: "", assignee: "", tags: [] });
+    setNewTask({ title: "", description: "", assignee: "", tags: [] });
     setSelectedColumn(columnTitle);
     setIsModalOpen(true);
   };
 
-  const handleSaveIdea = async () => {
+  const handleSaveTask = async () => {
     try {
+      const apiUrl = `${import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000"}/stories`;
+      console.log("[Dashboard] Creating story:", {
+        title: newTask.title,
+        description: newTask.description,
+        assignee: newTask.assignee,
+        status: selectedColumn || "Proposed",
+        url: apiUrl
+      });
+      
       const { data } = await axios.post(
-        `${import.meta.env.VITE_BASE_URL}/stories`,
+        apiUrl,
         {
-          title: newIdea.title,
-          description: newIdea.description,
-          assignee: newIdea.assignee,
-          tags: newIdea.tags || [],
+          title: newTask.title,
+          description: newTask.description,
+          assignee: newTask.assignee,
+          tags: newTask.tags || [],
           status: selectedColumn || "Proposed",
         }
       );
+      
+      console.log("[Dashboard] Story created successfully:", data);
 
       // Refresh the dashboard data after successful creation
-      await fetchIdeas();
+      await fetchTasks();
 
       setIsModalOpen(false);
-      setNewIdea({
+      setNewTask({
         title: "",
         description: "",
         assignee: "",
@@ -214,18 +225,23 @@ const DashboardPage = () => {
         alert(err.response.data.message);
       } else {
         console.error("An unexpected error occurred. Please try again.");
-        alert("Failed to save idea. Please try again.");
+        alert("Failed to save task. Please try again.");
       }
     }
   };
 
-  const fetchIdeas = async () => {
+  const fetchTasks = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const { data } = await axios.get(
-        `${import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000"}/stories`
-      );
+      const apiUrl = `${import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000"}/stories`;
+      console.log("[Dashboard] Fetching stories from:", apiUrl);
+      
+      const { data } = await axios.get(apiUrl);
+      
+      console.log("[Dashboard] API Response:", data);
+      console.log("[Dashboard] Response type:", typeof data, "Is array:", Array.isArray(data));
+      console.log("[Dashboard] Number of stories:", data?.length || 0);
 
       const newBoard = JSON.parse(JSON.stringify(initialColumns));
 
@@ -234,26 +250,95 @@ const DashboardPage = () => {
         col.tasks = [];
       });
 
+      // Status mapping for legacy values and variations
+      const statusMapping = {
+        "In Progress": "Proposed",
+        "in progress": "Proposed",
+        "IN PROGRESS": "Proposed",
+        "Needs Refinement": "Needs Refinement",
+        "needs refinement": "Needs Refinement",
+        "In Refinement": "In Refinement",
+        "in refinement": "In Refinement",
+        "Ready To Commit": "Ready To Commit",
+        "ready to commit": "Ready To Commit",
+        "Sprint Ready": "Sprint Ready",
+        "sprint ready": "Sprint Ready",
+      };
+
       // Map API response to column tasks
       if (data && Array.isArray(data)) {
-        data.forEach((idea) => {
-          const column = newBoard.find((col) => col.title === idea.status);
+        console.log("[Dashboard] Processing stories...");
+        data.forEach((story, index) => {
+          // Handle potential camelCase response (e.g., createdOn)
+          // But status, title, description, assignee should be as-is
+          const storyStatus = story.status?.trim() || "";
+          const mappedStatus = statusMapping[storyStatus] || storyStatus;
+          
+          console.log(`[Dashboard] Story ${index + 1}:`, {
+            id: story.id,
+            title: story.title,
+            originalStatus: storyStatus,
+            mappedStatus: mappedStatus,
+            assignee: story.assignee,
+            description: story.description,
+            rawStory: story
+          });
+          
+          // Try to find matching column by status (case-insensitive)
+          const column = newBoard.find((col) => 
+            col.title.toLowerCase() === mappedStatus.toLowerCase()
+          );
+          
           if (column) {
+            console.log(`[Dashboard] Found column "${column.title}" for story "${story.title}" with status "${mappedStatus}"`);
             column.tasks.push({
-              id: idea.id,
-              title: idea.title,
-              description: idea.description || "",
-              assignee: idea.assignee || "Unassigned",
-              status: idea.status,
-              tags: idea.tags || [],
+              id: story.id,
+              title: story.title || "",
+              description: story.description || "",
+              assignee: story.assignee || "Unassigned",
+              status: mappedStatus,
+              tags: story.tags || [],
             });
+          } else {
+            console.warn(`[Dashboard] No column found for status "${mappedStatus}" (original: "${storyStatus}"). Available columns:`, newBoard.map(col => col.title));
+            // If status doesn't match, default to "Proposed" column
+            const defaultColumn = newBoard.find((col) => col.title === "Proposed");
+            if (defaultColumn) {
+              console.log(`[Dashboard] Adding story to default "Proposed" column`);
+              defaultColumn.tasks.push({
+                id: story.id,
+                title: story.title || "",
+                description: story.description || "",
+                assignee: story.assignee || "Unassigned",
+                status: mappedStatus || "Proposed",
+                tags: story.tags || [],
+              });
+            } else {
+              console.error(`[Dashboard] Could not find "Proposed" column as fallback!`);
+            }
           }
         });
+      } else {
+        console.warn("[Dashboard] API response is not an array or is empty:", data);
+        if (data) {
+          console.warn("[Dashboard] Response type:", typeof data);
+          console.warn("[Dashboard] Response value:", JSON.stringify(data, null, 2));
+        }
       }
+
+      console.log("[Dashboard] Final board state:", newBoard.map(col => ({
+        title: col.title,
+        taskCount: col.tasks.length
+      })));
 
       setColumnData(newBoard);
     } catch (err) {
-      console.error("Failed to load ideas. Please try again later.", err);
+      console.error("[Dashboard] Failed to load tasks:", err);
+      console.error("[Dashboard] Error details:", {
+        message: err.message,
+        response: err.response?.data,
+        status: err.response?.status
+      });
       setError(
         err.response?.data?.message ||
           "Failed to load dashboard data. Please try again later."
@@ -263,7 +348,7 @@ const DashboardPage = () => {
     }
   };
 
-  const IdeaFormFooter = () => (
+  const TaskFormFooter = () => (
     <>
       <Button variant="outline" onClick={() => setIsModalOpen(false)}>
         Cancel
@@ -271,34 +356,34 @@ const DashboardPage = () => {
       <Button
         onClick={() => {
           console.log("[UI] Save clicked", {
-            title: newIdea.title,
-            description: newIdea.description,
-            assignee: newIdea.assignee,
-            tags: newIdea.tags,
+            title: newTask.title,
+            description: newTask.description,
+            assignee: newTask.assignee,
+            tags: newTask.tags,
             isFormValid,
           });
-          handleSaveIdea();
+          handleSaveTask();
         }}
         disabled={!isFormValid}
       >
-        Save Idea
+        Save Task
       </Button>
     </>
   );
 
   const isFormValid =
-    newIdea.title.trim() !== "" &&
-    newIdea.description.trim() !== "" &&
-    newIdea.assignee.trim() !== "";
+    newTask.title.trim() !== "" &&
+    newTask.description.trim() !== "" &&
+    newTask.assignee.trim() !== "";
 
   useEffect(() => {
-    fetchIdeas();
+    fetchTasks();
     setTeamMembers(dummyTeamMembers);
   }, []);
 
   return (
     <div className="flex flex-col h-screen bg-white">
-      <Header onCreateIdeaClick={handleOpenCreateModal} />
+      <Header onCreateTaskClick={handleOpenCreateModal} />
       <SearchBar />
       {isLoading ? (
         <div className="flex flex-grow items-center justify-center">
@@ -315,7 +400,7 @@ const DashboardPage = () => {
               <p className="text-sm">{error}</p>
             </div>
             <Button
-              onClick={fetchIdeas}
+              onClick={fetchTasks}
               variant="outline"
             >
               Retry
@@ -323,7 +408,7 @@ const DashboardPage = () => {
           </div>
         </div>
       ) : (
-        <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
+        <section className="flex flex-1 p-4 space-x-4 overflow-x-auto overflow-y-hidden min-h-0">
           {columnData.map((column, index) => (
             <TaskColumn
               key={`${column.title}-${index}`}
@@ -340,13 +425,13 @@ const DashboardPage = () => {
         <Modal
           isOpen={isModalOpen}
           onClose={() => setIsModalOpen(false)}
-          title="Create New Idea"
-          description="Fill in the details for your new idea. Click save when you're done."
-          footer={<IdeaFormFooter />}
+          title="Create New Task"
+          description="Fill in the details for your new task. Click save when you're done."
+          footer={<TaskFormFooter />}
         >
-          <NewIdeaForm
-            newIdea={newIdea}
-            setNewIdea={setNewIdea}
+          <NewTaskForm
+            newTask={newTask}
+            setNewTask={setNewTask}
             teamMembers={teamMembers}
           />
         </Modal>

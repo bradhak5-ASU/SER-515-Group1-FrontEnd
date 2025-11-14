@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Label } from "@/components/ui/label";
 
-const TagsDropdown = ({ newIdea, setNewIdea }) => {
+const TagsDropdown = ({ newTask, setNewTask }) => {
   const [isOpen, setIsOpen] = useState(false);
   const ref = useRef(null);
 
@@ -13,14 +13,14 @@ const TagsDropdown = ({ newIdea, setNewIdea }) => {
     "Bug",
     "Testing",
   ];
-  const selected = Array.isArray(newIdea.tags) ? newIdea.tags : [];
+  const selected = Array.isArray(newTask.tags) ? newTask.tags : [];
   const hasSelection = selected.length > 0;
 
   const toggleTag = (tag) => {
     const next = selected.includes(tag)
       ? selected.filter((t) => t !== tag)
       : [...selected, tag];
-    setNewIdea({ ...newIdea, tags: next });
+    setNewTask({ ...newTask, tags: next });
   };
 
   useEffect(() => {
@@ -78,7 +78,7 @@ const TagsDropdown = ({ newIdea, setNewIdea }) => {
             <div className="mt-2 flex items-center justify-between gap-2">
               <button
                 type="button"
-                onClick={() => setNewIdea({ ...newIdea, tags: [] })}
+                onClick={() => setNewTask({ ...newTask, tags: [] })}
                 className="text-xs text-muted-foreground hover:underline"
               >
                 Clear

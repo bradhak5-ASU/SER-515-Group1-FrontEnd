@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label";
 
 import TagsDropdown from "@/components/common/TagsDropdown";
 
-const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
+const NewTaskForm = ({ newTask, setNewTask, teamMembers }) => {
   teamMembers = [
     { name: "Select an assignee", id: 0, role: "" },
     ...teamMembers,
@@ -13,15 +13,15 @@ const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
   return (
     <div className="grid gap-4">
       <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="idea-title" className="text-right">
+        <Label htmlFor="task-title" className="text-right">
           Title
         </Label>
         <Input
-          id="idea-title"
+          id="task-title"
           placeholder="Enter the title"
           className="col-span-3"
-          value={newIdea.title}
-          onChange={(e) => setNewIdea({ ...newIdea, title: e.target.value })}
+          value={newTask.title}
+          onChange={(e) => setNewTask({ ...newTask, title: e.target.value })}
         />
       </div>
 
@@ -31,11 +31,11 @@ const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
         </Label>
         <Input
           id="description"
-          placeholder="Describe the new idea"
+          placeholder="Describe the new task"
           className="col-span-3"
-          value={newIdea.description}
+          value={newTask.description}
           onChange={(e) =>
-            setNewIdea({ ...newIdea, description: e.target.value })
+            setNewTask({ ...newTask, description: e.target.value })
           }
         />
       </div>
@@ -50,12 +50,12 @@ const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
                       ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2
                       disabled:cursor-not-allowed disabled:opacity-50
                       ${
-                        newIdea.assignee
+                        newTask.assignee
                           ? "text-foreground"
                           : "text-muted-foreground"
                       }`}
-          value={newIdea.assignee ?? ""}
-          onChange={(e) => setNewIdea({ ...newIdea, assignee: e.target.value })}
+          value={newTask.assignee ?? ""}
+          onChange={(e) => setNewTask({ ...newTask, assignee: e.target.value })}
         >
           {teamMembers.map((member, index) => (
             <option key={`${member.id}-${index}`} value={member.name}>
@@ -65,9 +65,10 @@ const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
         </select>
       </div>
 
-      <TagsDropdown newIdea={newIdea} setNewIdea={setNewIdea} />
+      <TagsDropdown newTask={newTask} setNewTask={setNewTask} />
     </div>
   );
 };
 
-export default NewIdeaForm;
+export default NewTaskForm;
+
