@@ -1,32 +1,35 @@
 import React, { useState } from "react";
 import axios from "axios";
 
-// Import the necessary ShadCN UI components
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
-// Import an icon from lucide-react (make sure to install it: npm install lucide-react)
 import { UserCircle2 } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
+import { toastNotify } from "@/lib/utils";
 
 const LoginPage = ({ type }) => {
-  const [email, setEmail] = useState("");
+  const { login } = useAuth();
+
+  const [email, setEmail] = useState(localStorage.getItem("userEmail") || "");
   const [password, setPassword] = useState("");
   const [rePassword, setRePassword] = useState("");
+  const [rememberMe, setRememberMe] = useState(
+    localStorage.getItem("rememberMe") === "true" || false
+  );
 
   const handleRememberMe = (checked) => {
     if (checked) {
-      // Logic to remember the user (e.g., set a cookie or local storage)
+      setRememberMe(true);
+      localStorage.setItem("rememberMe", "true");
+      localStorage.setItem("userEmail", email);
     } else {
-      // Logic to forget the user
+      setRememberMe(false);
+      localStorage.removeItem("userEmail");
+      localStorage.removeItem("rememberMe");
     }
   };
 
@@ -42,29 +45,30 @@ const LoginPage = ({ type }) => {
         const loginFormData = new FormData();
         loginFormData.append("username", email);
         loginFormData.append("password", password);
-        const response = await axios.post(
+        const { data } = await axios.post(
           `${import.meta.env.VITE_BASE_URL}/token`,
           loginFormData
         );
-        console.log("response:", response);
+        login(data.access_token);
         window.location.href = "/dashboard";
       } else {
         // Call signup API
-        const response = await axios.post(
+        const { data } = await axios.post(
           `${import.meta.env.VITE_BASE_URL}/users`,
           formData
         );
-        console.log("response:", response);
+        console.log("response:", data);
         window.location.href = "/login";
       }
     } catch (error) {
       console.error("Error during login/signup:", error);
+      toastNotify(error?.response?.data?.detail || error?.message, "error");
     }
   };
 
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <Card className="w-full max-w-sm mx-auto shadow-[0_0_100px_rgba(0,0,0,0.25)]">
+      <Card className="w-full max-w-sm mx-auto shadow-[0_0_100px_rgba(0,0,0,0.2)]">
         <CardHeader className="text-center space-y-4 pt-12">
           <div className="flex justify-center items-center space-x-2">
             <svg
@@ -141,6 +145,7 @@ const LoginPage = ({ type }) => {
                 <Checkbox
                   id="remember-me"
                   value="remember-me"
+                  checked={rememberMe}
                   onCheckedChange={handleRememberMe}
                 />
                 <Label htmlFor="remember-me" className="font-normal text-sm">
