@@ -11,21 +11,33 @@ import { UserCircle2 } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { toastNotify } from "@/lib/utils";
 
+import { emailRegex, nameRegex, userNameRegex } from "@/lib/constants";
+
+const initialState = {
+  name: "",
+  email: "",
+  userName: "",
+  password: "",
+};
+
 const LoginPage = ({ type }) => {
   const { login } = useAuth();
 
-  const [email, setEmail] = useState(localStorage.getItem("userEmail") || "");
-  const [password, setPassword] = useState("");
+  const [userData, setUserData] = useState({
+    ...initialState,
+    email: localStorage.getItem("userEmail") || "",
+  });
   const [rePassword, setRePassword] = useState("");
   const [rememberMe, setRememberMe] = useState(
     localStorage.getItem("rememberMe") === "true" || false
   );
+  const [errorState, setErrorState] = useState(initialState);
 
   const handleRememberMe = (checked) => {
     if (checked) {
       setRememberMe(true);
       localStorage.setItem("rememberMe", "true");
-      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userEmail", userData?.email);
     } else {
       setRememberMe(false);
       localStorage.removeItem("userEmail");
@@ -33,18 +45,73 @@ const LoginPage = ({ type }) => {
     }
   };
 
+  const checkValidation = () => {
+    const errors = {
+      name: "",
+      email: "",
+      userName: "",
+      password: "",
+      rePassword: "",
+    };
+
+    if (!userData?.email) {
+      errors.email = "Email is required";
+    } else if (!emailRegex.test(userData.email)) {
+      errors.email = "Enter a valid email address";
+    }
+
+    if (!userData?.password) {
+      errors.password = "Password is required";
+    } else if (userData.password.length < 8) {
+      errors.password = "Password must be at least 8 characters";
+    }
+
+    if (type === "sign-up") {
+      if (!userData?.name) {
+        errors.name = "Name is required";
+      } else if (!nameRegex.test(userData.name)) {
+        errors.name = "Name should contain only letters and spaces";
+      }
+
+      if (!userData?.userName) {
+        errors.userName = "User name is required";
+      } else if (!userNameRegex.test(userData.userName)) {
+        errors.userName = "User name must be alphanumeric (no spaces)";
+      }
+
+      if (!rePassword) {
+        errors.rePassword = "Please re-enter your password";
+      } else if (userData.password !== rePassword) {
+        errors.rePassword = "Passwords do not match";
+      }
+    }
+
+    setErrorState(errors);
+
+    const firstError = Object.values(errors).find((e) => e);
+    if (firstError) {
+      toastNotify(firstError, "error");
+      return false;
+    }
+
+    return true;
+  };
   const handleLoginSignup = async () => {
+    const isValid = checkValidation();
+    if (!isValid) return;
+
     const formData = {
-      email: email,
-      password: password,
+      email: userData?.email,
+      password: userData?.password,
+      user_name: userData?.userName,
     };
 
     try {
       if (type === "login") {
         // Call login API
         const loginFormData = new FormData();
-        loginFormData.append("username", email);
-        loginFormData.append("password", password);
+        loginFormData.append("username", userData?.email);
+        loginFormData.append("password", userData?.password);
         const { data } = await axios.post(
           `${import.meta.env.VITE_BASE_URL}/token`,
           loginFormData
@@ -53,11 +120,8 @@ const LoginPage = ({ type }) => {
         window.location.href = "/dashboard";
       } else {
         // Call signup API
-        const { data } = await axios.post(
-          `${import.meta.env.VITE_BASE_URL}/users`,
-          formData
-        );
-        console.log("response:", data);
+        await axios.post(`${import.meta.env.VITE_BASE_URL}/users`, formData);
+        toastNotify("Account created successfully! Please log in.", "success");
         window.location.href = "/login";
       }
     } catch (error) {
@@ -95,26 +159,68 @@ const LoginPage = ({ type }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="px-12 pb-12">
-          <div className="space-y-6">
+          <div className="space-y-3">
             {/* Avatar Placeholder */}
-            <div className="flex justify-center">
-              <div className="w-28 h-28 bg-gray-700 rounded-full flex items-center justify-center">
-                <UserCircle2 className="w-16 h-16 text-gray-400" />
+            {type === "login" && (
+              <div className="flex justify-center">
+                <div className="w-28 h-28 bg-gray-700 rounded-full flex items-center justify-center">
+                  <UserCircle2 className="w-16 h-16 text-gray-400" />
+                </div>
               </div>
-            </div>
+            )}
 
-            <div className="space-y-2">
+            {type === "sign-up" && (
+              <div className="space-y-1">
+                <Label htmlFor="name">Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="Enter Your Name"
+                  value={userData?.name}
+                  onChange={(e) =>
+                    setUserData({ ...userData, name: e.target.value })
+                  }
+                />
+                {errorState.name && (
+                  <p className="text-red-500 text-sm">{errorState.name}</p>
+                )}
+              </div>
+            )}
+            <div className="space-y-1">
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
                 type="email"
                 placeholder="Enter Your Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                value={userData?.email}
+                onChange={(e) =>
+                  setUserData({ ...userData, email: e.target.value })
+                }
               />
+              {errorState.email && (
+                <p className="text-red-500 text-sm">{errorState.email}</p>
+              )}
             </div>
 
-            <div className="space-y-2">
+            {type === "sign-up" && (
+              <div className="space-y-1">
+                <Label htmlFor="userName">User Name</Label>
+                <Input
+                  id="userName"
+                  type="text"
+                  placeholder="Enter Prefered User Name"
+                  value={userData?.userName}
+                  onChange={(e) =>
+                    setUserData({ ...userData, userName: e.target.value })
+                  }
+                />
+                {errorState.userName && (
+                  <p className="text-red-500 text-sm">{errorState.userName}</p>
+                )}
+              </div>
+            )}
+
+            <div className="space-y-1">
               <Label htmlFor="password">
                 {type === "sign-up" ? "Create Password" : "Password"}
               </Label>
@@ -122,13 +228,18 @@ const LoginPage = ({ type }) => {
                 id="password"
                 type="password"
                 placeholder="Enter Your Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
+                value={userData?.password}
+                onChange={(e) =>
+                  setUserData({ ...userData, password: e.target.value })
+                }
               />
+              {errorState.password && (
+                <p className="text-red-500 text-sm">{errorState.password}</p>
+              )}
             </div>
 
             {type === "sign-up" && (
-              <div className="space-y-2">
+              <div className="space-y-1">
                 <Label htmlFor="rePassword">Re-enter Password</Label>
                 <Input
                   id="rePassword"
@@ -137,6 +248,11 @@ const LoginPage = ({ type }) => {
                   value={rePassword}
                   onChange={(e) => setRePassword(e.target.value)}
                 />
+                {errorState.rePassword && (
+                  <p className="text-red-500 text-sm">
+                    {errorState.rePassword}
+                  </p>
+                )}
               </div>
             )}
 
