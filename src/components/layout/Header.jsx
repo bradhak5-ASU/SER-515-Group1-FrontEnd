@@ -1,13 +1,20 @@
-import { Settings } from "lucide-react";
+import { Settings, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 
 import { useAuth } from "@/context/AuthContext";
+import { ActionPopover } from "@/components/common/ActionPopover";
 
 export function Header({ onCreateIdeaClick }) {
   const navigate = useNavigate();
 
-  const { logout, isAuthenticated } = useAuth();
+  const { logout } = useAuth();
+
+  const settingsTrigger = (
+    <Button variant="outline" size="icon">
+      <Settings className="w-5 h-5" />
+    </Button>
+  );
 
   const handleLogout = () => {
     logout();
@@ -23,10 +30,16 @@ export function Header({ onCreateIdeaClick }) {
         <Button onClick={() => onCreateIdeaClick("Proposed")}>
           + Create Idea
         </Button>
-        <Button variant="outline" size="icon">
-          <Settings className="w-5 h-5" />
-          {isAuthenticated && <Button onClick={handleLogout}>Logout</Button>}
-        </Button>
+        <ActionPopover trigger={settingsTrigger} contentClassName="w-48 p-2">
+          <Button
+            variant="ghost"
+            className="w-full justify-start"
+            onClick={handleLogout}
+          >
+            <LogOut className="mr-2 h-4 w-4" />
+            <span>Logout</span>
+          </Button>
+        </ActionPopover>
       </div>
     </header>
   );
