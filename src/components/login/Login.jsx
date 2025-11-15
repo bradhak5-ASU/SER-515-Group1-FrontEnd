@@ -103,24 +103,24 @@ const LoginPage = ({ type }) => {
     const formData = {
       email: userData?.email,
       password: userData?.password,
-      user_name: userData?.userName,
     };
 
     try {
       if (type === "login") {
         // Call login API
-        const loginFormData = new FormData();
-        loginFormData.append("username", userData?.email);
-        loginFormData.append("password", userData?.password);
         const { data } = await axios.post(
           `${import.meta.env.VITE_BASE_URL}/login`,
-          loginFormData
+          formData
         );
         login(data.access_token);
         window.location.href = "/dashboard";
       } else {
         // Call signup API
-        await axios.post(`${import.meta.env.VITE_BASE_URL}/users`, formData);
+        await axios.post(`${import.meta.env.VITE_BASE_URL}/users`, {
+          ...formData,
+          name: userData?.name,
+          username: userData?.userName,
+        });
         toastNotify("Account created successfully! Please log in.", "success");
         window.location.href = "/login";
       }
@@ -291,6 +291,7 @@ const LoginPage = ({ type }) => {
                 <a
                   href="/sign-up"
                   className="font-medium text-black hover:text-gray-700 underline"
+                  onClick={() => handleRememberMe(false)}
                 >
                   Sign Up
                 </a>
