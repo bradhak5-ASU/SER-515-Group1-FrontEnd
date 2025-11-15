@@ -1,23 +1,24 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
 const ALL_STATUSES = [
-  "Proposed",
-  "Needs Refinement",
-  "In Refinement",
-  "Ready To Commit",
-  "Sprint Ready",
+  { id: 1, name: "Proposed", role: "Developer" },
+  { id: 2, name: "Needs Refinement", role: "Developer" },
+  { id: 3, name: "In Refinement", role: "Developer" },
+  { id: 4, name: "Ready To Commit", role: "Developer" },
+  { id: 5, name: "Sprint Ready", role: "Developer" },
 ];
-const ALL_ASSIGNEE = ["Akshat", "Balaji", "Charith", "Rahul", "Vishesh"];
-const ALL_TAGS = [
-  "Frontend",
-  "Backend",
-  "Research",
-  "Refactor",
-  "Bug",
-  "Testing",
+
+const ALL_ASSIGNEE = [
+  { id: 1, name: "Akshat", role: "Developer" },
+  { id: 2, name: "Balaji", role: "Developer" },
+  { id: 3, name: "Charith", role: "Developer" },
+  { id: 4, name: "Rahul", role: "Developer" },
+  { id: 5, name: "Vishesh", role: "Developer" },
 ];
+
+const ALL_TAGS = ["Frontend", "Backend", "Research", "Refactor", "Bug", "Testing"];
 
 export function applyFilters(columns = [], filters) {
   if (!filters) return columns;
@@ -29,12 +30,11 @@ export function applyFilters(columns = [], filters) {
     const t = (task.title || "").toLowerCase();
     const d = (task.description || "").toLowerCase();
     const taskTags = Array.isArray(task.tags) ? task.tags : [];
-    const taskAssignee = task.assignee ?? task.assignee ?? "";
+    const taskAssignee = task.assignee ?? task.assigne ?? ""; // <-- handles backend 'assigne'
 
     if (query && !(t.includes(query) || d.includes(query))) return false;
     if (assignees?.size && !assignees.has(String(taskAssignee))) return false;
-    if (tags?.size && ![...tags].every((tg) => taskTags.includes(tg)))
-      return false;
+    if (tags?.size && ![...tags].every((tg) => taskTags.includes(tg))) return false;
 
     return true;
   };
@@ -51,27 +51,26 @@ export function applyFilters(columns = [], filters) {
 export default function FilterDropdown({ data = [], onApply }) {
   const [open, setOpen] = useState(false);
   const [text, setText] = useState("");
-  const [statuses, setStatuses] = useState(new Set());
-  const [assignees, setAssignees] = useState(new Set());
-  const [tags, setTags] = useState(new Set());
+  const [statuses, setStatuses] = useState(new Set());   // Set of status names (strings)
+  const [assignees, setAssignees] = useState(new Set()); // Set of assignee names (strings)
+  const [tags, setTags] = useState(new Set());           // Set of tag strings
 
+  // (Optional) Derived options from live data; not used in UI below but kept for future
   const { assigneeOptions, tagOptions } = useMemo(() => {
     const a = new Set();
     const t = new Set();
     data.forEach((col) => {
       (col.tasks || []).forEach((task) => {
-        const asg = task?.assignee ?? task?.assignee;
+        const asg = task?.assignee ?? task?.assigne;
         if (asg) a.add(String(asg));
-        (Array.isArray(task?.tags) ? task.tags : []).forEach(
-          (tg) => tg && t.add(String(tg))
-        );
+        (Array.isArray(task?.tags) ? task.tags : []).forEach((tg) => tg && t.add(String(tg)));
       });
     });
     return { assigneeOptions: [...a].sort(), tagOptions: [...t].sort() };
   }, [data]);
 
-  const toggle = (set, value) => {
-    const next = new Set(set);
+  const toggle = (setObj, value) => {
+    const next = new Set(setObj);
     next.has(value) ? next.delete(value) : next.add(value);
     return next;
   };
@@ -81,12 +80,7 @@ export default function FilterDropdown({ data = [], onApply }) {
     setStatuses(new Set());
     setAssignees(new Set());
     setTags(new Set());
-    onApply?.({
-      text: "",
-      statuses: new Set(),
-      assignees: new Set(),
-      tags: new Set(),
-    });
+    onApply?.({ text: "", statuses: new Set(), assignees: new Set(), tags: new Set() });
   };
 
   const apply = () => {
@@ -94,13 +88,31 @@ export default function FilterDropdown({ data = [], onApply }) {
     setOpen(false);
   };
 
+  // Close on outside click + Esc
+  const panelRef = useRef(null);
+  useEffect(() => {
+    function handleClickOutside(e) {
+      if (panelRef.current && !panelRef.current.contains(e.target)) {
+        setOpen(false);
+      }
+    }
+    function handleEsc(e) {
+      if (e.key === "Escape") setOpen(false);
+    }
+
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleEsc);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEsc);
+    };
+  }, [open]);
+
   return (
-    <div className="relative inline-block text-left">
-      <Button
-        variant="outline"
-        onClick={() => setOpen((v) => !v)}
-        aria-expanded={open}
-      >
+    <div className="relative inline-block text-left" ref={panelRef}>
+      <Button variant="outline" onClick={() => setOpen((v) => !v)} aria-expanded={open}>
         Filter
       </Button>
 
@@ -110,6 +122,7 @@ export default function FilterDropdown({ data = [], onApply }) {
           role="dialog"
           aria-label="Filter options"
         >
+          {/* Text search */}
           <div className="mb-4 space-y-2">
             <div className="text-xs font-semibold text-gray-500">Search</div>
             <Input
@@ -119,57 +132,56 @@ export default function FilterDropdown({ data = [], onApply }) {
             />
           </div>
 
+          {/* Statuses */}
           <div className="mb-4">
-            <div className="mb-2 text-xs font-semibold text-gray-500">
-              Status
-            </div>
+            <div className="mb-2 text-xs font-semibold text-gray-500">Status</div>
             <div className="grid grid-cols-2 gap-2">
               {ALL_STATUSES.map((s) => (
                 <label
-                  key={s}
+                  key={s.id}
                   className="flex cursor-pointer items-center gap-1 rounded-xl border p-2 hover:bg-gray-100"
                 >
                   <input
                     type="checkbox"
                     className="h-4 w-4"
-                    checked={statuses.has(s)}
-                    onChange={() => setStatuses((prev) => toggle(prev, s))}
+                    checked={statuses.has(s.name)}
+                    onChange={() => setStatuses((prev) => toggle(prev, s.name))}
                   />
-                  <span className="text-sm">{s}</span>
+                  <span className="text-sm">{s.name}</span>
                 </label>
               ))}
             </div>
           </div>
 
+          {/* Assignees */}
           <div className="mb-4">
-            <div className="mb-2 text-xs font-semibold text-gray-500">
-              Assignee
-            </div>
+            <div className="mb-2 text-xs font-semibold text-gray-500">Assignee</div>
             <div className="grid grid-cols-2 gap-2">
               {ALL_ASSIGNEE.map((s) => (
                 <label
-                  key={s}
+                  key={s.id}
                   className="flex cursor-pointer items-center gap-1 rounded-xl border p-2 hover:bg-gray-100"
                 >
                   <input
                     type="checkbox"
                     className="h-4 w-4"
-                    checked={assignees.has(s)}
-                    onChange={() => setAssignees((prev) => toggle(prev, s))}
+                    checked={assignees.has(s.name)}
+                    onChange={() => setAssignees((prev) => toggle(prev, s.name))}
                   />
-                  <span className="text-sm">{s}</span>
+                  <span className="text-sm">{s.name}</span>
                 </label>
               ))}
             </div>
           </div>
 
+          {/* Tags */}
           <div className="mb-4">
             <div className="mb-2 text-xs font-semibold text-gray-500">Tags</div>
             <div className="grid grid-cols-2 gap-2">
               {ALL_TAGS.map((s) => (
                 <label
                   key={s}
-                  className="flex cursor-pointer items-center gap-1 rounded-l border p-2 hover:bg-gray-100"
+                  className="flex cursor-pointer items-center gap-1 rounded-xl border p-2 hover:bg-gray-100"
                 >
                   <input
                     type="checkbox"
@@ -183,11 +195,9 @@ export default function FilterDropdown({ data = [], onApply }) {
             </div>
           </div>
 
+          {/* Actions */}
           <div className="flex items-center justify-between border-t pt-3">
-            <button
-              onClick={clearAll}
-              className="text-sm text-gray-600 underline"
-            >
+            <button onClick={clearAll} className="text-sm text-gray-600 underline">
               Clear all
             </button>
             <div className="space-x-2">
