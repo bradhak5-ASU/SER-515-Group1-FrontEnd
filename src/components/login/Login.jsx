@@ -113,7 +113,7 @@ const LoginPage = ({ type }) => {
         loginFormData.append("username", userData?.email);
         loginFormData.append("password", userData?.password);
         const { data } = await axios.post(
-          `${import.meta.env.VITE_BASE_URL}/token`,
+          `${import.meta.env.VITE_BASE_URL}/login`,
           loginFormData
         );
         login(data.access_token);
