@@ -170,6 +170,7 @@ const DashboardPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState("");
   const [columnData, setColumnData] = useState(initialColumns);
+  const [originalColumnData, setOriginalColumnData] = useState(initialColumns);
   const [newIdea, setNewIdea] = useState({
     title: "",
     description: "",
@@ -196,13 +197,13 @@ const DashboardPage = () => {
         }
       );
 
-      setColumnData((prevColumns) => {
-        return prevColumns.map((col) =>
-          col.title === selectedColumn
-            ? { ...col, tasks: [...col.tasks, data?.story] }
-            : col
-        );
-      });
+      const updatedColumns = originalColumnData.map((col) =>
+        col.title === selectedColumn
+          ? { ...col, tasks: [...col.tasks, data?.story] }
+          : col
+      );
+      setOriginalColumnData(updatedColumns);
+      setColumnData(updatedColumns);
 
       setIsModalOpen(false);
       setNewIdea({
@@ -235,11 +236,30 @@ const DashboardPage = () => {
         }
       });
 
+      setOriginalColumnData(newBoard);
       setColumnData(newBoard);
     } catch (err) {
       console.error("Failed to load ideas. Please try again later.", err);
       alert("Failed to load ideas. Please try again later.");
     }
+  };
+
+  const handleFilter = (searchTerm) => {
+    if (!searchTerm || searchTerm.trim() === "") {
+      // If search is empty, show all ideas
+      setColumnData(originalColumnData);
+      return;
+    }
+
+    const searchLower = searchTerm.toLowerCase().trim();
+    const filteredColumns = originalColumnData.map((column) => ({
+      ...column,
+      tasks: column.tasks.filter((task) =>
+        task.title.toLowerCase().includes(searchLower)
+      ),
+    }));
+
+    setColumnData(filteredColumns);
   };
 
   const IdeaFormFooter = () => (
@@ -278,7 +298,7 @@ const DashboardPage = () => {
   return (
     <div className="flex flex-col h-screen bg-white">
       <Header onCreateIdeaClick={handleOpenCreateModal} />
-      <SearchBar />
+      <SearchBar onFilter={handleFilter} />
       <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
         {columnData.map((column, index) => (
           <TaskColumn
