@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Pencil, UserPlus, Trash2, ArrowUp } from "lucide-react";
+import { MoreHorizontal, Pencil, UserPlus, Trash2, ArrowUp, ListChecks, Target } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
@@ -59,7 +59,8 @@ export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
   };
 
   return (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 space-y-2 relative">
+    <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 space-y-3 relative">
+      {/* Header with Title and Menu */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="text-xs font-semibold text-primary">{task?.title || "Task"}</div>
@@ -109,6 +110,33 @@ export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
           )}
         </div>
       </div>
+
+      {/* Acceptance Criteria Section */}
+      {task?.acceptanceCriteria && task.acceptanceCriteria.length > 0 && (
+        <div className="border-t pt-2">
+          <div className="flex items-center gap-1 text-xs font-medium text-muted-foreground mb-1">
+            <ListChecks className="h-3 w-3" />
+            <span>Acceptance Criteria:</span>
+          </div>
+          <ul className="space-y-1 pl-4">
+            {task.acceptanceCriteria.map((criteria, idx) => (
+              <li key={idx} className="text-xs text-muted-foreground list-disc">
+                {criteria}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Story Points Badge */}
+      {task?.storyPoints && (
+        <div className="flex items-center gap-1 pt-1">
+          <Target className="h-3 w-3 text-blue-600" />
+          <span className="text-xs font-medium text-blue-600">
+            {task.storyPoints} points
+          </span>
+        </div>
+      )}
     </div>
   );
 }
