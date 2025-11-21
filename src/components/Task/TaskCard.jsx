@@ -147,17 +147,12 @@ export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
         </div>
       )}
 
-      {/* Assignee and Status Section */}
+      {/* Assignee Section */}
       <div className="flex flex-wrap gap-2 pt-2 border-t">
         {task?.assignee && task.assignee !== "Unassigned" && (
           <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded text-xs">
             <User className="h-3 w-3 text-blue-600" />
             <span className="text-blue-600">{task.assignee}</span>
-          </div>
-        )}
-        {task?.status && (
-          <div className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-700 font-medium">
-            {task.status}
           </div>
         )}
       </div>
