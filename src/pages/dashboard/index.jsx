@@ -60,6 +60,7 @@ const DashboardPage = () => {
     title: "",
     description: "",
     assignee: "",
+    status: "",
     tags: [],
     acceptanceCriteria: [],
     storyPoints: null,
@@ -74,6 +75,7 @@ const DashboardPage = () => {
       title: "", 
       description: "", 
       assignee: "", 
+      status: columnTitle,
       tags: [],
       acceptanceCriteria: [],
       storyPoints: null,
@@ -91,14 +93,14 @@ const DashboardPage = () => {
           description: newIdea.description,
           assignee: newIdea.assignee,
           tags: newIdea.tags || [],
-          status: selectedColumn || "Proposed",
+          status: newIdea.status || selectedColumn || "Proposed",
           acceptanceCriteria: newIdea.acceptanceCriteria || [],
           storyPoints: newIdea.storyPoints,
         }
       );
 
       const updatedColumns = originalColumnData.map((col) =>
-        col.title === selectedColumn
+        col.title === (newIdea.status || selectedColumn)
           ? { ...col, tasks: [...col.tasks, data?.story] }
           : col
       );
@@ -110,6 +112,7 @@ const DashboardPage = () => {
         title: "",
         description: "",
         assignee: "",
+        status: "",
         tags: [],
         acceptanceCriteria: [],
         storyPoints: null,
@@ -311,6 +314,7 @@ const DashboardPage = () => {
             newIdea={newIdea}
             setNewIdea={setNewIdea}
             teamMembers={teamMembers}
+            selectedColumn={selectedColumn}
           />
         </Modal>
       )}

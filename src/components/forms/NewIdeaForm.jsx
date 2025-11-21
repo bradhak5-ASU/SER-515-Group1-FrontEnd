@@ -4,10 +4,18 @@ import { Label } from "@/components/ui/label";
 
 import TagsDropdown from "@/components/common/TagsDropdown";
 
-const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
+const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers, selectedColumn }) => {
   teamMembers = [
     { name: "Select an assignee", id: 0, role: "" },
     ...teamMembers,
+  ];
+
+  const statusOptions = [
+    "Proposed",
+    "Needs Refinement",
+    "In Refinement",
+    "Ready To Commit",
+    "Sprint Ready",
   ];
 
   return (
@@ -29,15 +37,33 @@ const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers }) => {
         <Label htmlFor="description" className="text-right">
           Description
         </Label>
-        <Input
+        <textarea
           id="description"
           placeholder="Describe the new idea"
-          className="col-span-3"
+          className="col-span-3 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 resize-vertical min-h-24"
           value={newIdea.description}
           onChange={(e) =>
             setNewIdea({ ...newIdea, description: e.target.value })
           }
         />
+      </div>
+
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="status" className="text-right">
+          Status
+        </Label>
+        <select
+          id="status"
+          className="col-span-3 h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+          value={newIdea.status || selectedColumn || "Proposed"}
+          onChange={(e) => setNewIdea({ ...newIdea, status: e.target.value })}
+        >
+          {statusOptions.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid grid-cols-4 items-center gap-4">

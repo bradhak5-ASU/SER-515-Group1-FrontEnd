@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { X } from "lucide-react";
+import { X, Send } from "lucide-react";
 import TagsDropdown from "@/components/common/TagsDropdown";
 
 const EditStoryForm = ({ story, onSave, teamMembers }) => {
@@ -15,6 +15,9 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
     tags: [],
   });
 
+  const [activity, setActivity] = useState([]);
+  const [newComment, setNewComment] = useState("");
+
   useEffect(() => {
     if (story) {
       setFormData({
@@ -25,6 +28,8 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
         assignee: story.assignee || "",
         tags: story.tags || [],
       });
+      // Initialize activity from story if available
+      setActivity(story.activity || []);
     }
   }, [story]);
 
@@ -35,6 +40,11 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
   };
 
   const addCriterion = () => {
+    // Check if we already have 5 criteria
+    if (formData.acceptanceCriteria.length >= 5) {
+      alert("Maximum 5 acceptance criteria allowed");
+      return;
+    }
     setFormData({
       ...formData,
       acceptanceCriteria: [...formData.acceptanceCriteria, ""],
@@ -46,6 +56,14 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
     setFormData({ ...formData, acceptanceCriteria: updated });
   };
 
+  const handleAddComment = () => {
+    if (newComment.trim()) {
+      const timestamp = new Date().toLocaleString();
+      setActivity([...activity, { text: newComment, timestamp }]);
+      setNewComment("");
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSave({
@@ -53,6 +71,7 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
       ...formData,
       acceptanceCriteria: formData.acceptanceCriteria.filter((c) => c.trim()),
       storyPoints: formData.storyPoints ? parseInt(formData.storyPoints) : null,
+      activity,
     });
   };
 
@@ -79,14 +98,14 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
       </div>
 
       {/* Description */}
-      <div className="grid grid-cols-4 items-center gap-4">
-        <Label htmlFor="edit-description" className="text-right">
+      <div className="grid grid-cols-4 items-start gap-4">
+        <Label htmlFor="edit-description" className="text-right pt-2">
           Description
         </Label>
-        <Input
+        <textarea
           id="edit-description"
           placeholder="Describe the story"
-          className="col-span-3"
+          className="col-span-3 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-vertical min-h-24"
           value={formData.description}
           onChange={(e) =>
             setFormData({ ...formData, description: e.target.value })
@@ -118,11 +137,15 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
               </Button>
             </div>
           ))}
+          <div className="text-xs text-muted-foreground mb-2">
+            {formData.acceptanceCriteria.length}/5 criteria
+          </div>
           <Button
             type="button"
             variant="outline"
             size="sm"
             onClick={addCriterion}
+            disabled={formData.acceptanceCriteria.length >= 5}
             className="w-full"
           >
             + Add Criterion
@@ -173,6 +196,46 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
         newIdea={formData}
         setNewIdea={setFormData}
       />
+
+      {/* Activity and Comments */}
+      <div className="grid grid-cols-4 items-start gap-4 pt-4 border-t">
+        <Label className="text-right pt-2">Activity & Comments</Label>
+        <div className="col-span-3 space-y-3">
+          {/* Activity Feed */}
+          <div className="max-h-48 overflow-y-auto space-y-2 bg-gray-50 rounded-md p-3">
+            {activity && activity.length > 0 ? (
+              activity.map((item, index) => (
+                <div key={index} className="text-sm border-l-2 border-blue-300 pl-2 py-1">
+                  <p className="text-muted-foreground text-xs">{item.timestamp}</p>
+                  <p className="text-foreground">{item.text}</p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">No comments yet</p>
+            )}
+          </div>
+          
+          {/* Comment Input */}
+          <div className="flex gap-2">
+            <textarea
+              placeholder="Add a comment..."
+              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 resize-none"
+              rows="2"
+              value={newComment}
+              onChange={(e) => setNewComment(e.target.value)}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={handleAddComment}
+              className="shrink-0 h-auto"
+            >
+              <Send className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </div>
 
       {/* Submit Button */}
       <div className="flex justify-end gap-2 pt-4">
