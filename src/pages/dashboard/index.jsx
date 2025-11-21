@@ -137,9 +137,15 @@ const DashboardPage = () => {
   // NEW: Handle Save Edit
   const handleSaveEdit = async (updatedTask) => {
     try {
+      const token = localStorage.getItem("authToken");
       await axios.put(
         `${import.meta.env.VITE_BASE_URL}/stories/${updatedTask.id}`,
-        updatedTask
+        updatedTask,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
       );
 
       // Update local state
