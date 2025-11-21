@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
 import { Header } from "@/components/layout/Header";
 import { TaskColumn } from "@/components/Task/TaskColumn";
-
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import EditStoryForm from "@/components/forms/EditStoryForm";
 import NewIdeaForm from "@/components/forms/NewIdeaForm";
 
 const initialColumns = [
@@ -39,31 +40,11 @@ const initialColumns = [
 ];
 
 const dummyTeamMembers = [
-  {
-    id: 1,
-    name: "Akshat",
-    role: "Developer",
-  },
-  {
-    id: 2,
-    name: "Balaji",
-    role: "Developer",
-  },
-  {
-    id: 3,
-    name: "Charith",
-    role: "Developer",
-  },
-  {
-    id: 4,
-    name: "Rahul",
-    role: "Developer",
-  },
-  {
-    id: 5,
-    name: "Vishesh",
-    role: "Developer",
-  },
+  { id: 1, name: "Akshat", role: "Developer" },
+  { id: 2, name: "Balaji", role: "Developer" },
+  { id: 3, name: "Charith", role: "Developer" },
+  { id: 4, name: "Rahul", role: "Developer" },
+  { id: 5, name: "Vishesh", role: "Developer" },
 ];
 
 const DashboardPage = () => {
@@ -79,11 +60,26 @@ const DashboardPage = () => {
     title: "",
     description: "",
     assignee: "",
+    status: "",
     tags: [],
+    acceptanceCriteria: [],
+    storyPoints: null,
   });
 
+  // NEW: Edit Modal State
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedTask, setSelectedTask] = useState(null);
+
   const handleOpenCreateModal = (columnTitle) => {
-    setNewIdea({ title: "", description: "", assignee: "", tags: [] });
+    setNewIdea({ 
+      title: "", 
+      description: "", 
+      assignee: "", 
+      status: columnTitle,
+      tags: [],
+      acceptanceCriteria: [],
+      storyPoints: null,
+    });
     setSelectedColumn(columnTitle);
     setIsModalOpen(true);
   };
@@ -97,12 +93,14 @@ const DashboardPage = () => {
           description: newIdea.description,
           assignee: newIdea.assignee,
           tags: newIdea.tags || [],
-          status: selectedColumn || "Proposed",
+          status: newIdea.status || selectedColumn || "Proposed",
+          acceptanceCriteria: newIdea.acceptanceCriteria || [],
+          storyPoints: newIdea.storyPoints,
         }
       );
 
       const updatedColumns = originalColumnData.map((col) =>
-        col.title === selectedColumn
+        col.title === (newIdea.status || selectedColumn)
           ? { ...col, tasks: [...col.tasks, data?.story] }
           : col
       );
@@ -114,7 +112,10 @@ const DashboardPage = () => {
         title: "",
         description: "",
         assignee: "",
+        status: "",
         tags: [],
+        acceptanceCriteria: [],
+        storyPoints: null,
       });
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
@@ -127,6 +128,44 @@ const DashboardPage = () => {
     }
   };
 
+  // NEW: Handle Edit Task
+  const handleEditTask = (task) => {
+    setSelectedTask(task);
+    setEditModalOpen(true);
+  };
+
+  // NEW: Handle Save Edit
+  const handleSaveEdit = async (updatedTask) => {
+    try {
+      const token = localStorage.getItem("authToken");
+      await axios.put(
+        `${import.meta.env.VITE_BASE_URL}/stories/${updatedTask.id}`,
+        updatedTask,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update local state
+      setColumnData((prevColumns) => {
+        return prevColumns.map((col) => ({
+          ...col,
+          tasks: col.tasks.map((task) =>
+            task.id === updatedTask.id ? updatedTask : task
+          ),
+        }));
+      });
+
+      setEditModalOpen(false);
+      setSelectedTask(null);
+      alert("Story updated successfully!");
+    } catch (err) {
+      console.error("Failed to update story:", err);
+      alert("Failed to update story. Please try again.");
+    }
+  };
   const fetchIdeas = useCallback(async (searchTerm = "", isUserSearch = false) => {
     setIsLoading(true);
     setError(null);
@@ -262,11 +301,13 @@ const DashboardPage = () => {
               dotColor={column.dotColor}
               tasks={column.tasks}
               onAddTask={handleOpenCreateModal}
+              onEdit={handleEditTask}
             />
           ))}
         </section>
       )}
 
+      {/* Create New Idea Modal */}
       {isModalOpen && (
         <Modal
           isOpen={isModalOpen}
@@ -279,9 +320,29 @@ const DashboardPage = () => {
             newIdea={newIdea}
             setNewIdea={setNewIdea}
             teamMembers={teamMembers}
+            selectedColumn={selectedColumn}
           />
         </Modal>
       )}
+
+      {/* Edit Story Modal */}
+      <Dialog open={editModalOpen} onOpenChange={setEditModalOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Story</DialogTitle>
+            <DialogDescription>
+              Update the details of your story. Click save when you're done.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedTask && (
+            <EditStoryForm
+              story={selectedTask}
+              onSave={handleSaveEdit}
+              teamMembers={teamMembers}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
