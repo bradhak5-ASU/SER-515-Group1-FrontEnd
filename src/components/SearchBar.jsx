@@ -29,8 +29,10 @@ export function SearchBar({ onFilter }) {
       return;
     }
     
-    // Call the debounced filter (it will handle empty strings appropriately)
-    debouncedFilterRef.current(searchTerm);
+    // Only call if searchTerm is not empty (don't call API with empty string)
+    if (searchTerm && searchTerm.trim() !== "") {
+      debouncedFilterRef.current(searchTerm);
+    }
   }, [searchTerm]);
 
   return (

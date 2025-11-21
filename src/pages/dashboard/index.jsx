@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
 import { Loader2 } from "lucide-react";
 
@@ -174,6 +174,7 @@ const DashboardPage = () => {
   const [originalColumnData, setOriginalColumnData] = useState(initialColumns);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const hasInitialLoad = useRef(false);
   const [newIdea, setNewIdea] = useState({
     title: "",
     description: "",
@@ -231,14 +232,19 @@ const DashboardPage = () => {
     setError(null);
     try {
       const baseUrl = import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000";
-      let url = `${baseUrl}/stories`;
+      let url;
       
-      // If search term is provided, add it as a query parameter
-      // Note: Backend may need to add a 'title' or 'search' parameter
-      // For now, we'll fetch all and filter client-side if backend doesn't support it
+      // If search term is provided, use /filter endpoint
       if (searchTerm && searchTerm.trim() !== "") {
-        // Try to use a search parameter - backend may need to implement this
-        url += `?title=${encodeURIComponent(searchTerm.trim())}`;
+        const trimmedTerm = searchTerm.trim();
+        // Check if search term is a pure integer
+        const isInteger = /^\d+$/.test(trimmedTerm);
+        // If it's an integer, send as number, otherwise as string
+        const searchValue = isInteger ? parseInt(trimmedTerm, 10) : trimmedTerm;
+        url = `${baseUrl}/filter?search=${encodeURIComponent(searchValue)}`;
+      } else {
+        // If no search term, use regular /stories endpoint
+        url = `${baseUrl}/stories`;
       }
 
       const { data } = await axios.get(url);
@@ -311,8 +317,12 @@ const DashboardPage = () => {
     newIdea.assignee.trim() !== "";
 
   useEffect(() => {
-    fetchIdeas();
-    setTeamMembers(dummyTeamMembers);
+    // Only fetch on initial load once
+    if (!hasInitialLoad.current) {
+      hasInitialLoad.current = true;
+      fetchIdeas();
+      setTeamMembers(dummyTeamMembers);
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // fetchIdeas is stable, doesn't need to be in deps
 
