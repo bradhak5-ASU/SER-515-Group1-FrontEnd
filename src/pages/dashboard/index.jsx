@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
+import { Loader2 } from "lucide-react";
 
 import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/ui/button";
@@ -171,6 +172,8 @@ const DashboardPage = () => {
   const [selectedColumn, setSelectedColumn] = useState("");
   const [columnData, setColumnData] = useState(initialColumns);
   const [originalColumnData, setOriginalColumnData] = useState(initialColumns);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
   const [newIdea, setNewIdea] = useState({
     title: "",
     description: "",
@@ -223,44 +226,61 @@ const DashboardPage = () => {
     }
   };
 
-  const fetchIdeas = async () => {
+  const fetchIdeas = useCallback(async (searchTerm = "") => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const { data } = await axios.get("http://127.0.0.1:8000/stories");
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000";
+      let url = `${baseUrl}/stories`;
+      
+      // If search term is provided, add it as a query parameter
+      // Note: Backend may need to add a 'title' or 'search' parameter
+      // For now, we'll fetch all and filter client-side if backend doesn't support it
+      if (searchTerm && searchTerm.trim() !== "") {
+        // Try to use a search parameter - backend may need to implement this
+        url += `?title=${encodeURIComponent(searchTerm.trim())}`;
+      }
+
+      const { data } = await axios.get(url);
 
       const newBoard = JSON.parse(JSON.stringify(initialColumns));
 
-      data.forEach((idea) => {
+      // Filter by title if search term exists and backend doesn't filter
+      const filteredData = searchTerm && searchTerm.trim() !== ""
+        ? data.filter((idea) =>
+            idea.title?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+          )
+        : data;
+
+      filteredData.forEach((idea) => {
         const column = newBoard.find((col) => col.title === idea.status);
         if (column) {
           column.tasks.push(idea);
         }
       });
 
-      setOriginalColumnData(newBoard);
+      if (!searchTerm || searchTerm.trim() === "") {
+        setOriginalColumnData(newBoard);
+      }
       setColumnData(newBoard);
     } catch (err) {
       console.error("Failed to load ideas. Please try again later.", err);
-      alert("Failed to load ideas. Please try again later.");
+      setError(err.response?.data?.detail || err.message || "Failed to load ideas. Please try again later.");
+      // If search fails, fall back to original data
+      if (searchTerm && searchTerm.trim() !== "") {
+        setColumnData(originalColumnData);
+      } else {
+        // If initial load fails, show empty columns
+        setColumnData(initialColumns);
+      }
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
 
-  const handleFilter = (searchTerm) => {
-    if (!searchTerm || searchTerm.trim() === "") {
-      // If search is empty, show all ideas
-      setColumnData(originalColumnData);
-      return;
-    }
-
-    const searchLower = searchTerm.toLowerCase().trim();
-    const filteredColumns = originalColumnData.map((column) => ({
-      ...column,
-      tasks: column.tasks.filter((task) =>
-        task.title.toLowerCase().includes(searchLower)
-      ),
-    }));
-
-    setColumnData(filteredColumns);
-  };
+  const handleFilter = useCallback((searchTerm) => {
+    fetchIdeas(searchTerm);
+  }, [fetchIdeas]);
 
   const IdeaFormFooter = () => (
     <>
@@ -293,23 +313,42 @@ const DashboardPage = () => {
   useEffect(() => {
     fetchIdeas();
     setTeamMembers(dummyTeamMembers);
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // fetchIdeas is stable, doesn't need to be in deps
 
   return (
     <div className="flex flex-col h-screen bg-white">
       <Header onCreateIdeaClick={handleOpenCreateModal} />
       <SearchBar onFilter={handleFilter} />
-      <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
-        {columnData.map((column, index) => (
-          <TaskColumn
-            key={`${column.title}-${index}`}
-            title={column.title}
-            dotColor={column.dotColor}
-            tasks={column.tasks}
-            onAddTask={handleOpenCreateModal}
-          />
-        ))}
-      </section>
+      {isLoading ? (
+        <div className="flex flex-grow items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-grow items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-500 mb-2">{error}</p>
+            <button
+              onClick={() => fetchIdeas()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : (
+        <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
+          {columnData.map((column, index) => (
+            <TaskColumn
+              key={`${column.title}-${index}`}
+              title={column.title}
+              dotColor={column.dotColor}
+              tasks={column.tasks}
+              onAddTask={handleOpenCreateModal}
+            />
+          ))}
+        </section>
+      )}
 
       {isModalOpen && (
         <Modal
