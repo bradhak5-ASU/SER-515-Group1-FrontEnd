@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback, useRef } from "react";
-import axios from "axios";
 import { Loader2 } from "lucide-react";
 
 import { Modal } from "@/components/common/Modal";
@@ -7,8 +6,17 @@ import { Button } from "@/components/ui/button";
 import { SearchBar } from "@/components/SearchBar";
 import { Header } from "@/components/layout/Header";
 import { TaskColumn } from "@/components/Task/TaskColumn";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import EditStoryForm from "@/components/forms/EditStoryForm";
+
+import apiClient from "@/api/axios";
+
 import NewIdeaForm from "@/components/forms/NewIdeaForm";
 import { toastNotify } from "@/lib/utils";
 
@@ -72,10 +80,10 @@ const DashboardPage = () => {
   const [selectedTask, setSelectedTask] = useState(null);
 
   const handleOpenCreateModal = (columnTitle) => {
-    setNewIdea({ 
-      title: "", 
-      description: "", 
-      assignee: "", 
+    setNewIdea({
+      title: "",
+      description: "",
+      assignee: "",
       status: columnTitle,
       tags: [],
       acceptanceCriteria: [],
@@ -87,7 +95,7 @@ const DashboardPage = () => {
 
   const handleSaveIdea = async () => {
     try {
-      const { data } = await axios.post(
+      const { data } = await apiClient.post(
         `${import.meta.env.VITE_BASE_URL}/stories`,
         {
           title: newIdea.title,
@@ -108,6 +116,8 @@ const DashboardPage = () => {
       setOriginalColumnData(updatedColumns);
       setColumnData(updatedColumns);
 
+      toastNotify("Idea created successfully!", "success");
+
       setIsModalOpen(false);
       setNewIdea({
         title: "",
@@ -121,10 +131,10 @@ const DashboardPage = () => {
     } catch (err) {
       if (err.response && err.response.data && err.response.data.message) {
         console.error(err.response.data.message);
-        alert(err.response.data.message);
+        toastNotify(err.response.data.message, "error");
       } else {
         console.error("An unexpected error occurred. Please try again.");
-        alert("Failed to save idea. Please try again.");
+        toastNotify("Failed to save idea. Please try again.", "error");
       }
     }
   };
@@ -141,8 +151,8 @@ const DashboardPage = () => {
 
     try {
       const token = localStorage.getItem("authToken");
-      
-      await axios.put(
+
+      await apiClient.put(
         `${import.meta.env.VITE_BASE_URL}/stories/${task.id}`,
         {
           ...task,
@@ -161,7 +171,7 @@ const DashboardPage = () => {
           ...col,
           tasks: col.tasks.filter((t) => t.id !== task.id),
         }));
-        
+
         const targetColumn = newBoard.find((col) => col.title === newStatus);
         if (targetColumn) {
           targetColumn.tasks.push({
@@ -169,7 +179,7 @@ const DashboardPage = () => {
             status: newStatus,
           });
         }
-        
+
         return newBoard;
       });
     } catch (err) {
@@ -182,7 +192,7 @@ const DashboardPage = () => {
   const handleSaveEdit = async (updatedTask) => {
     try {
       const token = localStorage.getItem("authToken");
-      await axios.put(
+      await apiClient.put(
         `${import.meta.env.VITE_BASE_URL}/stories/${updatedTask.id}`,
         updatedTask,
         {
@@ -210,66 +220,67 @@ const DashboardPage = () => {
       toastNotify("Failed to update story. Please try again.", "error");
     }
   };
-  const fetchIdeas = useCallback(async (searchTerm = "", isUserSearch = false) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const baseUrl = import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000";
-      let url;
 
-      // If it's initial load/refresh (not user search), use /stories endpoint
-      if (!isUserSearch) {
-        url = `${baseUrl}/stories`;
-      } else {
-        // If it's user-initiated search, use /filter endpoint
-        if (searchTerm && searchTerm.trim() !== "") {
-          const trimmedTerm = searchTerm.trim();
-          // Check if search term is a pure integer
-          const isInteger = /^\d+$/.test(trimmedTerm);
-          // If it's an integer, send as number, otherwise as string
-          const searchValue = isInteger ? parseInt(trimmedTerm, 10) : trimmedTerm;
-          url = `${baseUrl}/filter?search=${encodeURIComponent(searchValue)}`;
+  const fetchIdeas = useCallback(
+    async (searchTerm = "", isUserSearch = false) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const baseUrl = import.meta.env.VITE_BASE_URL;
+        let url;
+
+        if (!isUserSearch) {
+          url = `${baseUrl}/stories`;
         } else {
-          // If no search term but user cleared search, call /filter with empty search parameter
-          url = `${baseUrl}/filter?search=`;
+          if (searchTerm && searchTerm.trim() !== "") {
+            const trimmedTerm = searchTerm.trim();
+            const isInteger = /^\d+$/.test(trimmedTerm);
+            const searchValue = isInteger
+              ? parseInt(trimmedTerm, 10)
+              : trimmedTerm;
+            url = `${baseUrl}/filter?search=${encodeURIComponent(searchValue)}`;
+          } else {
+            url = `${baseUrl}/filter?search=`;
+          }
         }
-      }
 
-      const { data } = await axios.get(url);
+        const { data } = await apiClient.get(url);
 
-      const newBoard = JSON.parse(JSON.stringify(initialColumns));
+        const newBoard = JSON.parse(JSON.stringify(initialColumns));
 
-      // Backend already filters the data, so use it directly
-      // No need for client-side filtering as backend handles both ID and title searches
-      data.forEach((idea) => {
-        const column = newBoard.find((col) => col.title === idea.status);
-        if (column) {
-          column.tasks.push(idea);
+        // Backend already filters the data, so use it directly
+        // No need for client-side filtering as backend handles both ID and title searches
+        data.forEach((idea) => {
+          const column = newBoard.find((col) => col.title === idea.status);
+          if (column) {
+            column.tasks.push(idea);
+          }
+        });
+
+        if (!searchTerm || searchTerm.trim() === "") {
+          setOriginalColumnData(newBoard);
         }
-      });
-
-      if (!searchTerm || searchTerm.trim() === "") {
-        setOriginalColumnData(newBoard);
+        setColumnData(newBoard);
+      } catch (err) {
+        console.error("Failed to load ideas. Please try again later.", err);
+        setError(
+          err.response?.data?.detail ||
+            err.message ||
+            "Failed to load ideas. Please try again later."
+        );
+        // If search fails, fall back to original data
+        if (searchTerm && searchTerm.trim() !== "") {
+          setColumnData(originalColumnData);
+        } else {
+          // If initial load fails, show empty columns
+          setColumnData(initialColumns);
+        }
+      } finally {
+        setIsLoading(false);
       }
-      setColumnData(newBoard);
-    } catch (err) {
-      console.error("Failed to load ideas. Please try again later.", err);
-      setError(
-        err.response?.data?.detail ||
-          err.message ||
-          "Failed to load ideas. Please try again later."
-      );
-      // If search fails, fall back to original data
-      if (searchTerm && searchTerm.trim() !== "") {
-        setColumnData(originalColumnData);
-      } else {
-        // If initial load fails, show empty columns
-        setColumnData(initialColumns);
-      }
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+    },
+    []
+  );
 
   const handleFilter = useCallback(
     (searchTerm) => {
