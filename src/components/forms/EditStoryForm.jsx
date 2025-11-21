@@ -4,6 +4,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { X, Send } from "lucide-react";
 import TagsDropdown from "@/components/common/TagsDropdown";
+import { STATUS_OPTIONS } from '../../lib/constants';
 
 const EditStoryForm = ({ story, onSave, teamMembers }) => {
   const [formData, setFormData] = useState({
@@ -16,13 +17,6 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
     tags: [],
   });
 
-  const statusOptions = [
-    "Proposed",
-    "Needs Refinement",
-    "In Refinement",
-    "Ready To Commit",
-    "Sprint Ready",
-  ];
 
   const [activity, setActivity] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -207,7 +201,7 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
           onChange={(e) => setFormData({ ...formData, status: e.target.value })}
         >
           <option value="">Select a status</option>
-          {statusOptions.map((status) => (
+          {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
               {status}
             </option>

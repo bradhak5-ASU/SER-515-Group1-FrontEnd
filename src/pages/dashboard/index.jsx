@@ -10,6 +10,7 @@ import { TaskColumn } from "@/components/Task/TaskColumn";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import EditStoryForm from "@/components/forms/EditStoryForm";
 import NewIdeaForm from "@/components/forms/NewIdeaForm";
+import { toastNotify } from "@/lib/utils";
 
 const initialColumns = [
   {
@@ -140,7 +141,6 @@ const DashboardPage = () => {
 
     try {
       const token = localStorage.getItem("authToken");
-      console.log("Updating task status via drag and drop:", task.id, newStatus);
       
       await axios.put(
         `${import.meta.env.VITE_BASE_URL}/stories/${task.id}`,
@@ -204,10 +204,10 @@ const DashboardPage = () => {
 
       setEditModalOpen(false);
       setSelectedTask(null);
-      alert("Story updated successfully!");
+      toastNotify("Story updated successfully!", "success");
     } catch (err) {
       console.error("Failed to update story:", err);
-      alert("Failed to update story. Please try again.");
+      toastNotify("Failed to update story. Please try again.", "error");
     }
   };
   const fetchIdeas = useCallback(async (searchTerm = "", isUserSearch = false) => {
@@ -285,13 +285,6 @@ const DashboardPage = () => {
       </Button>
       <Button
         onClick={() => {
-          console.log("[UI] Save clicked", {
-            title: newIdea.title,
-            description: newIdea.description,
-            assignee: newIdea.assignee,
-            tags: newIdea.tags,
-            isFormValid,
-          });
           handleSaveIdea();
         }}
         disabled={!isFormValid}
