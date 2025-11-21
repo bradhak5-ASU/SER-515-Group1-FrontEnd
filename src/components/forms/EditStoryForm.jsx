@@ -9,11 +9,20 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
   const [formData, setFormData] = useState({
     title: "",
     description: "",
+    status: "",
     acceptanceCriteria: [],
     storyPoints: "",
     assignee: "",
     tags: [],
   });
+
+  const statusOptions = [
+    "Proposed",
+    "Needs Refinement",
+    "In Refinement",
+    "Ready To Commit",
+    "Sprint Ready",
+  ];
 
   const [activity, setActivity] = useState([]);
   const [newComment, setNewComment] = useState("");
@@ -23,13 +32,27 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
       setFormData({
         title: story.title || "",
         description: story.description || "",
+        status: story.status || "",
         acceptanceCriteria: story.acceptanceCriteria || [],
         storyPoints: story.storyPoints || "",
         assignee: story.assignee || "",
         tags: story.tags || [],
       });
       // Initialize activity from story if available
-      setActivity(story.activity || []);
+      // Backend may return activity as array of strings or objects
+      if (story.activity && Array.isArray(story.activity)) {
+        const formattedActivity = story.activity.map((item) => {
+          if (typeof item === "string") {
+            return { text: item, timestamp: new Date().toLocaleString() };
+          }
+          // If it's an object with "action" property from backend
+          if (item.action) {
+            return { text: item.action, timestamp: item.timestamp || new Date().toLocaleString() };
+          }
+          return item;
+        });
+        setActivity(formattedActivity);
+      }
     }
   }, [story]);
 
@@ -170,6 +193,26 @@ const EditStoryForm = ({ story, onSave, teamMembers }) => {
             setFormData({ ...formData, storyPoints: e.target.value })
           }
         />
+      </div>
+
+      {/* Status */}
+      <div className="grid grid-cols-4 items-center gap-4">
+        <Label htmlFor="edit-status" className="text-right">
+          Status
+        </Label>
+        <select
+          id="edit-status"
+          className="col-span-3 h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+          value={formData.status}
+          onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+        >
+          <option value="">Select a status</option>
+          {statusOptions.map((status) => (
+            <option key={status} value={status}>
+              {status}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Assignee */}

@@ -1,10 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Pencil, UserPlus, Trash2, ArrowUp, ListChecks, Target } from "lucide-react";
+import { MoreHorizontal, Pencil, UserPlus, Trash2, ArrowUp, ListChecks, Target, User, Tag } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef(null);
+
+  const handleDragStart = (e) => {
+    e.dataTransfer.effectAllowed = "move";
+    e.dataTransfer.setData("application/json", JSON.stringify(task));
+  };
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -59,7 +64,11 @@ export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
   };
 
   return (
-    <div className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 space-y-3 relative">
+    <div 
+      className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 space-y-3 relative cursor-move hover:shadow-md transition-shadow"
+      draggable
+      onDragStart={handleDragStart}
+    >
       {/* Header with Title and Menu */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
@@ -135,6 +144,42 @@ export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
           <span className="text-xs font-medium text-blue-600">
             {task.storyPoints} points
           </span>
+        </div>
+      )}
+
+      {/* Assignee and Status Section */}
+      <div className="flex flex-wrap gap-2 pt-2 border-t">
+        {task?.assignee && task.assignee !== "Unassigned" && (
+          <div className="flex items-center gap-1 bg-blue-50 px-2 py-1 rounded text-xs">
+            <User className="h-3 w-3 text-blue-600" />
+            <span className="text-blue-600">{task.assignee}</span>
+          </div>
+        )}
+        {task?.status && (
+          <div className="bg-gray-100 px-2 py-1 rounded text-xs text-gray-700 font-medium">
+            {task.status}
+          </div>
+        )}
+      </div>
+
+      {/* Tags Section */}
+      {task?.tags && task.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1 pt-2">
+          {Array.isArray(task.tags) ? (
+            task.tags.map((tag, idx) => (
+              <div key={idx} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded flex items-center gap-1">
+                <Tag className="h-2 w-2" />
+                {tag}
+              </div>
+            ))
+          ) : typeof task.tags === "string" ? (
+            task.tags.split(",").map((tag, idx) => (
+              <div key={idx} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded flex items-center gap-1">
+                <Tag className="h-2 w-2" />
+                {tag.trim()}
+              </div>
+            ))
+          ) : null}
         </div>
       )}
     </div>
