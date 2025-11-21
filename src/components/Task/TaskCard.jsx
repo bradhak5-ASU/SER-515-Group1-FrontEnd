@@ -1,5 +1,15 @@
 import React, { useState, useRef, useEffect } from "react";
-import { MoreHorizontal, Pencil, UserPlus, Trash2, ArrowUp, ListChecks, Target, User, Tag } from "lucide-react";
+import {
+  MoreHorizontal,
+  Pencil,
+  UserPlus,
+  Trash2,
+  ArrowUp,
+  ListChecks,
+  Target,
+  User,
+  Tag,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
@@ -64,16 +74,23 @@ export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
   };
 
   return (
-    <div 
-      className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 space-y-3 relative cursor-move hover:shadow-md transition-shadow"
+    <div
+      className="rounded-lg border bg-card text-card-foreground shadow-sm p-4 space-y-3 relative cursor-pointer hover:shadow-md transition-shadow"
       draggable
       onDragStart={handleDragStart}
     >
       {/* Header with Title and Menu */}
       <div className="flex items-start justify-between">
         <div className="flex-1">
-          <div className="text-xs font-semibold text-primary">{task?.title || "Task"}</div>
-          <p className="text-sm text-muted-foreground mt-1">{task?.description || ""}</p>
+          <div
+            className="text-xs font-semibold text-primary underline hover:text-primary/80"
+            onClick={handleEdit}
+          >
+            <span>#{task?.id || ""}</span> {task?.title || "Task"}
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {task?.description || ""}
+          </p>
         </div>
         <div className="relative" ref={menuRef}>
           <Button
@@ -160,21 +177,27 @@ export function TaskCard({ task, onEdit, onAssign, onDelete, onMoveToTop }) {
       {/* Tags Section */}
       {task?.tags && task.tags.length > 0 && (
         <div className="flex flex-wrap gap-1 pt-2">
-          {Array.isArray(task.tags) ? (
-            task.tags.map((tag, idx) => (
-              <div key={idx} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded flex items-center gap-1">
-                <Tag className="h-2 w-2" />
-                {tag}
-              </div>
-            ))
-          ) : typeof task.tags === "string" ? (
-            task.tags.split(",").map((tag, idx) => (
-              <div key={idx} className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded flex items-center gap-1">
-                <Tag className="h-2 w-2" />
-                {tag.trim()}
-              </div>
-            ))
-          ) : null}
+          {Array.isArray(task.tags)
+            ? task.tags.map((tag, idx) => (
+                <div
+                  key={idx}
+                  className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded flex items-center gap-1"
+                >
+                  <Tag className="h-2 w-2" />
+                  {tag}
+                </div>
+              ))
+            : typeof task.tags === "string"
+            ? task.tags.split(",").map((tag, idx) => (
+                <div
+                  key={idx}
+                  className="bg-purple-100 text-purple-700 text-xs px-2 py-1 rounded flex items-center gap-1"
+                >
+                  <Tag className="h-2 w-2" />
+                  {tag.trim()}
+                </div>
+              ))
+            : null}
         </div>
       )}
     </div>

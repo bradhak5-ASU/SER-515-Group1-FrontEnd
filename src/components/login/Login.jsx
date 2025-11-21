@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import { UserCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,9 +7,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
-import { UserCircle2 } from "lucide-react";
-import { useAuth } from "@/context/AuthContext";
+import apiClient from "@/api/axios";
 import { toastNotify } from "@/lib/utils";
+import { useAuth } from "@/context/AuthContext";
 
 import { emailRegex, nameRegex, userNameRegex } from "@/lib/constants";
 
@@ -108,7 +108,7 @@ const LoginPage = ({ type }) => {
     try {
       if (type === "login") {
         // Call login API
-        const { data } = await axios.post(
+        const { data } = await apiClient.post(
           `${import.meta.env.VITE_BASE_URL}/login`,
           formData
         );
@@ -116,7 +116,7 @@ const LoginPage = ({ type }) => {
         window.location.href = "/dashboard";
       } else {
         // Call signup API
-        await axios.post(`${import.meta.env.VITE_BASE_URL}/users`, {
+        await apiClient.post(`${import.meta.env.VITE_BASE_URL}/users`, {
           ...formData,
           name: userData?.name,
           username: userData?.userName,
@@ -291,7 +291,11 @@ const LoginPage = ({ type }) => {
                 <a
                   href="/sign-up"
                   className="font-medium text-black hover:text-gray-700 underline"
-                  onClick={() => handleRememberMe(false)}
+                  onClick={() => {
+                    handleRememberMe(false);
+                    localStorage.removeItem("userEmail");
+                    localStorage.removeItem("rememberMe");
+                  }}
                 >
                   Sign Up
                 </a>
