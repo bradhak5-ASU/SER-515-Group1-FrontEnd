@@ -6,6 +6,7 @@ import { debounce } from "@/lib/utils";
 export function SearchBar({ onFilter }) {
   const [searchTerm, setSearchTerm] = useState("");
   const isInitialMount = useRef(true);
+  const hasUserInteracted = useRef(false);
 
   // Use ref to store the debounced function so it doesn't get recreated
   const debouncedFilterRef = useRef(
@@ -14,11 +15,12 @@ export function SearchBar({ onFilter }) {
     }, 500)
   );
 
-  // Update the debounced function if onFilter changes
+  // Update the debounced function if onFilter changes (but don't call it)
   useEffect(() => {
     debouncedFilterRef.current = debounce((term) => {
       onFilter(term);
     }, 500);
+    // Don't call it here, just update the ref
   }, [onFilter]);
 
   // Call debounced filter whenever searchTerm changes (but not on initial mount)
@@ -29,11 +31,19 @@ export function SearchBar({ onFilter }) {
       return;
     }
     
-    // Only call if searchTerm is not empty (don't call API with empty string)
-    if (searchTerm && searchTerm.trim() !== "") {
+    // Only call if user has interacted (changed the search term)
+    if (hasUserInteracted.current) {
+      // Call debounced filter for both empty and non-empty search terms
+      // Empty string will trigger API call to show all ideas
       debouncedFilterRef.current(searchTerm);
     }
   }, [searchTerm]);
+
+  // Track when user actually types in the input
+  const handleInputChange = (e) => {
+    hasUserInteracted.current = true;
+    setSearchTerm(e.target.value);
+  };
 
   return (
     <div className="flex items-center p-4 border-b">
@@ -43,7 +53,7 @@ export function SearchBar({ onFilter }) {
           placeholder="Search Idea"
           className="pl-10"
           value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
+          onChange={handleInputChange}
         />
       </div>
     </div>

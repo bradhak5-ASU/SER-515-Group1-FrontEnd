@@ -14,127 +14,27 @@ const initialColumns = [
   {
     title: "Proposed",
     dotColor: "bg-gray-400",
-    tasks: [
-      {
-        id: "1",
-        title: "Implement User Authentication",
-        description:
-          "Develop and integrate user login, registration, and session management.",
-        assignee: "Balaji",
-        status: "Proposed",
-        tags: ["Backend", "Security"],
-      },
-      {
-        id: "2",
-        title: "Design Database Schema",
-        description:
-          "Create the database schema for users, tasks, and projects.",
-        assignee: "Rahul",
-        status: "Proposed",
-        tags: ["Backend", "Database"],
-      },
-      {
-        id: "3",
-        title: "Set up Project Structure",
-        description:
-          "Initialize the frontend and backend repositories with basic folder structures.",
-        assignee: "Charith",
-        status: "Proposed",
-        tags: ["Frontend", "Backend"],
-      },
-    ],
+    tasks: [],
   },
   {
     title: "Needs Refinement",
     dotColor: "bg-blue-500",
-    tasks: [
-      {
-        id: "4",
-        title: "API Documentation",
-        description:
-          "Create comprehensive API documentation for all endpoints.",
-        assignee: "Akshat",
-        status: "Needs Refinement",
-        tags: ["Backend", "Research"],
-      },
-      {
-        id: "5",
-        title: "UI Component Library",
-        description: "Build reusable UI components for the dashboard.",
-        assignee: "Balaji",
-        status: "Needs Refinement",
-        tags: ["Frontend", "UI/UX"],
-      },
-    ],
+    tasks: [],
   },
   {
     title: "In Refinement",
     dotColor: "bg-yellow-500",
-    tasks: [
-      {
-        id: "6",
-        title: "Task Management Features",
-        description: "Implement drag-and-drop functionality for task cards.",
-        assignee: "Rahul",
-        status: "In Refinement",
-        tags: ["Frontend", "Testing"],
-      },
-    ],
+    tasks: [],
   },
   {
     title: "Ready To Commit",
     dotColor: "bg-purple-500",
-    tasks: [
-      {
-        id: "7",
-        title: "Code Review System",
-        description:
-          "Set up automated code review process with GitHub Actions.",
-        assignee: "Charith",
-        status: "Ready To Commit",
-        tags: ["DevOps", "Testing"],
-      },
-      {
-        id: "8",
-        title: "Error Handling",
-        description:
-          "Implement comprehensive error handling across the application.",
-        assignee: "Akshat",
-        status: "Ready To Commit",
-        tags: ["Backend", "Bug"],
-      },
-    ],
+    tasks: [],
   },
   {
     title: "Sprint Ready",
     dotColor: "bg-green-500",
-    tasks: [
-      {
-        id: "9",
-        title: "Initial UI Mockups",
-        description: "Created wireframes and basic mockups for the dashboard.",
-        assignee: "Balaji",
-        status: "Sprint Ready",
-        tags: ["Frontend", "Research"],
-      },
-      {
-        id: "10",
-        title: "Database Connection",
-        description:
-          "Established connection between backend and PostgreSQL database.",
-        assignee: "Rahul",
-        status: "Sprint Ready",
-        tags: ["Backend", "Database"],
-      },
-      {
-        id: "11",
-        title: "Frontend Routing",
-        description: "Implemented React Router for navigation between pages.",
-        assignee: "Charith",
-        status: "Sprint Ready",
-        tags: ["Frontend", "Refactor"],
-      },
-    ],
+    tasks: [],
   },
 ];
 
@@ -227,38 +127,38 @@ const DashboardPage = () => {
     }
   };
 
-  const fetchIdeas = useCallback(async (searchTerm = "") => {
+  const fetchIdeas = useCallback(async (searchTerm = "", isUserSearch = false) => {
     setIsLoading(true);
     setError(null);
     try {
       const baseUrl = import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000";
       let url;
-      
-      // If search term is provided, use /filter endpoint
-      if (searchTerm && searchTerm.trim() !== "") {
-        const trimmedTerm = searchTerm.trim();
-        // Check if search term is a pure integer
-        const isInteger = /^\d+$/.test(trimmedTerm);
-        // If it's an integer, send as number, otherwise as string
-        const searchValue = isInteger ? parseInt(trimmedTerm, 10) : trimmedTerm;
-        url = `${baseUrl}/filter?search=${encodeURIComponent(searchValue)}`;
-      } else {
-        // If no search term, use regular /stories endpoint
+
+      // If it's initial load/refresh (not user search), use /stories endpoint
+      if (!isUserSearch) {
         url = `${baseUrl}/stories`;
+      } else {
+        // If it's user-initiated search, use /filter endpoint
+        if (searchTerm && searchTerm.trim() !== "") {
+          const trimmedTerm = searchTerm.trim();
+          // Check if search term is a pure integer
+          const isInteger = /^\d+$/.test(trimmedTerm);
+          // If it's an integer, send as number, otherwise as string
+          const searchValue = isInteger ? parseInt(trimmedTerm, 10) : trimmedTerm;
+          url = `${baseUrl}/filter?search=${encodeURIComponent(searchValue)}`;
+        } else {
+          // If no search term but user cleared search, call /filter with empty search parameter
+          url = `${baseUrl}/filter?search=`;
+        }
       }
 
       const { data } = await axios.get(url);
 
       const newBoard = JSON.parse(JSON.stringify(initialColumns));
 
-      // Filter by title if search term exists and backend doesn't filter
-      const filteredData = searchTerm && searchTerm.trim() !== ""
-        ? data.filter((idea) =>
-            idea.title?.toLowerCase().includes(searchTerm.toLowerCase().trim())
-          )
-        : data;
-
-      filteredData.forEach((idea) => {
+      // Backend already filters the data, so use it directly
+      // No need for client-side filtering as backend handles both ID and title searches
+      data.forEach((idea) => {
         const column = newBoard.find((col) => col.title === idea.status);
         if (column) {
           column.tasks.push(idea);
@@ -271,7 +171,11 @@ const DashboardPage = () => {
       setColumnData(newBoard);
     } catch (err) {
       console.error("Failed to load ideas. Please try again later.", err);
-      setError(err.response?.data?.detail || err.message || "Failed to load ideas. Please try again later.");
+      setError(
+        err.response?.data?.detail ||
+          err.message ||
+          "Failed to load ideas. Please try again later."
+      );
       // If search fails, fall back to original data
       if (searchTerm && searchTerm.trim() !== "") {
         setColumnData(originalColumnData);
@@ -284,9 +188,12 @@ const DashboardPage = () => {
     }
   }, []);
 
-  const handleFilter = useCallback((searchTerm) => {
-    fetchIdeas(searchTerm);
-  }, [fetchIdeas]);
+  const handleFilter = useCallback(
+    (searchTerm) => {
+      fetchIdeas(searchTerm, true); // true indicates it's a user-initiated search
+    },
+    [fetchIdeas]
+  );
 
   const IdeaFormFooter = () => (
     <>
