@@ -1,14 +1,8 @@
 import React, { useMemo, useState } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { STATUS_OPTIONS } from '../../lib/constants';
 
-const ALL_STATUSES = [
-  "Proposed",
-  "Needs Refinement",
-  "In Refinement",
-  "Ready To Commit",
-  "Sprint Ready",
-];
 const ALL_ASSIGNEE = ["Akshat", "Balaji", "Charith", "Rahul", "Vishesh"];
 const ALL_TAGS = [
   "Frontend",
@@ -124,7 +118,7 @@ export default function FilterDropdown({ data = [], onApply }) {
               Status
             </div>
             <div className="grid grid-cols-2 gap-2">
-              {ALL_STATUSES.map((s) => (
+              {STATUS_OPTIONS.map((s) => (
                 <label
                   key={s}
                   className="flex cursor-pointer items-center gap-1 rounded-xl border p-2 hover:bg-gray-100"

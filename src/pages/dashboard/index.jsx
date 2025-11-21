@@ -10,6 +10,7 @@ import { TaskColumn } from "@/components/Task/TaskColumn";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import EditStoryForm from "@/components/forms/EditStoryForm";
 import NewIdeaForm from "@/components/forms/NewIdeaForm";
+import { toastNotify } from "@/lib/utils";
 
 const initialColumns = [
   {
@@ -134,6 +135,49 @@ const DashboardPage = () => {
     setEditModalOpen(true);
   };
 
+  // NEW: Handle Drop Task (Drag and Drop to change status)
+  const handleDropTask = async (task, newStatus) => {
+    if (task.status === newStatus) return; // No change needed
+
+    try {
+      const token = localStorage.getItem("authToken");
+      
+      await axios.put(
+        `${import.meta.env.VITE_BASE_URL}/stories/${task.id}`,
+        {
+          ...task,
+          status: newStatus,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      // Update local state
+      setColumnData((prevColumns) => {
+        const newBoard = prevColumns.map((col) => ({
+          ...col,
+          tasks: col.tasks.filter((t) => t.id !== task.id),
+        }));
+        
+        const targetColumn = newBoard.find((col) => col.title === newStatus);
+        if (targetColumn) {
+          targetColumn.tasks.push({
+            ...task,
+            status: newStatus,
+          });
+        }
+        
+        return newBoard;
+      });
+    } catch (err) {
+      console.error("Failed to update task status:", err);
+      alert("Failed to update task status. Please try again.");
+    }
+  };
+
   // NEW: Handle Save Edit
   const handleSaveEdit = async (updatedTask) => {
     try {
@@ -160,10 +204,10 @@ const DashboardPage = () => {
 
       setEditModalOpen(false);
       setSelectedTask(null);
-      alert("Story updated successfully!");
+      toastNotify("Story updated successfully!", "success");
     } catch (err) {
       console.error("Failed to update story:", err);
-      alert("Failed to update story. Please try again.");
+      toastNotify("Failed to update story. Please try again.", "error");
     }
   };
   const fetchIdeas = useCallback(async (searchTerm = "", isUserSearch = false) => {
@@ -241,13 +285,6 @@ const DashboardPage = () => {
       </Button>
       <Button
         onClick={() => {
-          console.log("[UI] Save clicked", {
-            title: newIdea.title,
-            description: newIdea.description,
-            assignee: newIdea.assignee,
-            tags: newIdea.tags,
-            isFormValid,
-          });
           handleSaveIdea();
         }}
         disabled={!isFormValid}
@@ -302,6 +339,7 @@ const DashboardPage = () => {
               tasks={column.tasks}
               onAddTask={handleOpenCreateModal}
               onEdit={handleEditTask}
+              onDrop={handleDropTask}
             />
           ))}
         </section>

@@ -1,6 +1,7 @@
 // src/components/forms.jsx
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { STATUS_OPTIONS } from '../../lib/constants';
 
 import TagsDropdown from "@/components/common/TagsDropdown";
 
@@ -10,13 +11,7 @@ const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers, selectedColumn }) => {
     ...teamMembers,
   ];
 
-  const statusOptions = [
-    "Proposed",
-    "Needs Refinement",
-    "In Refinement",
-    "Ready To Commit",
-    "Sprint Ready",
-  ];
+
 
   return (
     <div className="grid gap-4">
@@ -58,7 +53,7 @@ const NewIdeaForm = ({ newIdea, setNewIdea, teamMembers, selectedColumn }) => {
           value={newIdea.status || selectedColumn || "Proposed"}
           onChange={(e) => setNewIdea({ ...newIdea, status: e.target.value })}
         >
-          {statusOptions.map((status) => (
+          {STATUS_OPTIONS.map((status) => (
             <option key={status} value={status}>
               {status}
             </option>
