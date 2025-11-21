@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import axios from "axios";
+import { Loader2 } from "lucide-react";
 
 import { Modal } from "@/components/common/Modal";
 import { Button } from "@/components/ui/button";
@@ -13,127 +14,27 @@ const initialColumns = [
   {
     title: "Proposed",
     dotColor: "bg-gray-400",
-    tasks: [
-      {
-        id: "1",
-        title: "Implement User Authentication",
-        description:
-          "Develop and integrate user login, registration, and session management.",
-        assignee: "Balaji",
-        status: "Proposed",
-        tags: ["Backend", "Security"],
-      },
-      {
-        id: "2",
-        title: "Design Database Schema",
-        description:
-          "Create the database schema for users, tasks, and projects.",
-        assignee: "Rahul",
-        status: "Proposed",
-        tags: ["Backend", "Database"],
-      },
-      {
-        id: "3",
-        title: "Set up Project Structure",
-        description:
-          "Initialize the frontend and backend repositories with basic folder structures.",
-        assignee: "Charith",
-        status: "Proposed",
-        tags: ["Frontend", "Backend"],
-      },
-    ],
+    tasks: [],
   },
   {
     title: "Needs Refinement",
     dotColor: "bg-blue-500",
-    tasks: [
-      {
-        id: "4",
-        title: "API Documentation",
-        description:
-          "Create comprehensive API documentation for all endpoints.",
-        assignee: "Akshat",
-        status: "Needs Refinement",
-        tags: ["Backend", "Research"],
-      },
-      {
-        id: "5",
-        title: "UI Component Library",
-        description: "Build reusable UI components for the dashboard.",
-        assignee: "Balaji",
-        status: "Needs Refinement",
-        tags: ["Frontend", "UI/UX"],
-      },
-    ],
+    tasks: [],
   },
   {
     title: "In Refinement",
     dotColor: "bg-yellow-500",
-    tasks: [
-      {
-        id: "6",
-        title: "Task Management Features",
-        description: "Implement drag-and-drop functionality for task cards.",
-        assignee: "Rahul",
-        status: "In Refinement",
-        tags: ["Frontend", "Testing"],
-      },
-    ],
+    tasks: [],
   },
   {
     title: "Ready To Commit",
     dotColor: "bg-purple-500",
-    tasks: [
-      {
-        id: "7",
-        title: "Code Review System",
-        description:
-          "Set up automated code review process with GitHub Actions.",
-        assignee: "Charith",
-        status: "Ready To Commit",
-        tags: ["DevOps", "Testing"],
-      },
-      {
-        id: "8",
-        title: "Error Handling",
-        description:
-          "Implement comprehensive error handling across the application.",
-        assignee: "Akshat",
-        status: "Ready To Commit",
-        tags: ["Backend", "Bug"],
-      },
-    ],
+    tasks: [],
   },
   {
     title: "Sprint Ready",
     dotColor: "bg-green-500",
-    tasks: [
-      {
-        id: "9",
-        title: "Initial UI Mockups",
-        description: "Created wireframes and basic mockups for the dashboard.",
-        assignee: "Balaji",
-        status: "Sprint Ready",
-        tags: ["Frontend", "Research"],
-      },
-      {
-        id: "10",
-        title: "Database Connection",
-        description:
-          "Established connection between backend and PostgreSQL database.",
-        assignee: "Rahul",
-        status: "Sprint Ready",
-        tags: ["Backend", "Database"],
-      },
-      {
-        id: "11",
-        title: "Frontend Routing",
-        description: "Implemented React Router for navigation between pages.",
-        assignee: "Charith",
-        status: "Sprint Ready",
-        tags: ["Frontend", "Refactor"],
-      },
-    ],
+    tasks: [],
   },
 ];
 
@@ -170,6 +71,10 @@ const DashboardPage = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedColumn, setSelectedColumn] = useState("");
   const [columnData, setColumnData] = useState(initialColumns);
+  const [originalColumnData, setOriginalColumnData] = useState(initialColumns);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const hasInitialLoad = useRef(false);
   const [newIdea, setNewIdea] = useState({
     title: "",
     description: "",
@@ -196,13 +101,13 @@ const DashboardPage = () => {
         }
       );
 
-      setColumnData((prevColumns) => {
-        return prevColumns.map((col) =>
-          col.title === selectedColumn
-            ? { ...col, tasks: [...col.tasks, data?.story] }
-            : col
-        );
-      });
+      const updatedColumns = originalColumnData.map((col) =>
+        col.title === selectedColumn
+          ? { ...col, tasks: [...col.tasks, data?.story] }
+          : col
+      );
+      setOriginalColumnData(updatedColumns);
+      setColumnData(updatedColumns);
 
       setIsModalOpen(false);
       setNewIdea({
@@ -222,12 +127,37 @@ const DashboardPage = () => {
     }
   };
 
-  const fetchIdeas = async () => {
+  const fetchIdeas = useCallback(async (searchTerm = "", isUserSearch = false) => {
+    setIsLoading(true);
+    setError(null);
     try {
-      const { data } = await axios.get("http://127.0.0.1:8000/stories");
+      const baseUrl = import.meta.env.VITE_BASE_URL || "http://127.0.0.1:8000";
+      let url;
+
+      // If it's initial load/refresh (not user search), use /stories endpoint
+      if (!isUserSearch) {
+        url = `${baseUrl}/stories`;
+      } else {
+        // If it's user-initiated search, use /filter endpoint
+        if (searchTerm && searchTerm.trim() !== "") {
+          const trimmedTerm = searchTerm.trim();
+          // Check if search term is a pure integer
+          const isInteger = /^\d+$/.test(trimmedTerm);
+          // If it's an integer, send as number, otherwise as string
+          const searchValue = isInteger ? parseInt(trimmedTerm, 10) : trimmedTerm;
+          url = `${baseUrl}/filter?search=${encodeURIComponent(searchValue)}`;
+        } else {
+          // If no search term but user cleared search, call /filter with empty search parameter
+          url = `${baseUrl}/filter?search=`;
+        }
+      }
+
+      const { data } = await axios.get(url);
 
       const newBoard = JSON.parse(JSON.stringify(initialColumns));
 
+      // Backend already filters the data, so use it directly
+      // No need for client-side filtering as backend handles both ID and title searches
       data.forEach((idea) => {
         const column = newBoard.find((col) => col.title === idea.status);
         if (column) {
@@ -235,12 +165,35 @@ const DashboardPage = () => {
         }
       });
 
+      if (!searchTerm || searchTerm.trim() === "") {
+        setOriginalColumnData(newBoard);
+      }
       setColumnData(newBoard);
     } catch (err) {
       console.error("Failed to load ideas. Please try again later.", err);
-      alert("Failed to load ideas. Please try again later.");
+      setError(
+        err.response?.data?.detail ||
+          err.message ||
+          "Failed to load ideas. Please try again later."
+      );
+      // If search fails, fall back to original data
+      if (searchTerm && searchTerm.trim() !== "") {
+        setColumnData(originalColumnData);
+      } else {
+        // If initial load fails, show empty columns
+        setColumnData(initialColumns);
+      }
+    } finally {
+      setIsLoading(false);
     }
-  };
+  }, []);
+
+  const handleFilter = useCallback(
+    (searchTerm) => {
+      fetchIdeas(searchTerm, true); // true indicates it's a user-initiated search
+    },
+    [fetchIdeas]
+  );
 
   const IdeaFormFooter = () => (
     <>
@@ -271,25 +224,48 @@ const DashboardPage = () => {
     newIdea.assignee.trim() !== "";
 
   useEffect(() => {
-    fetchIdeas();
-    setTeamMembers(dummyTeamMembers);
-  }, []);
+    // Only fetch on initial load once
+    if (!hasInitialLoad.current) {
+      hasInitialLoad.current = true;
+      fetchIdeas();
+      setTeamMembers(dummyTeamMembers);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // fetchIdeas is stable, doesn't need to be in deps
 
   return (
     <div className="flex flex-col h-screen bg-white">
       <Header onCreateIdeaClick={handleOpenCreateModal} />
-      <SearchBar />
-      <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
-        {columnData.map((column, index) => (
-          <TaskColumn
-            key={`${column.title}-${index}`}
-            title={column.title}
-            dotColor={column.dotColor}
-            tasks={column.tasks}
-            onAddTask={handleOpenCreateModal}
-          />
-        ))}
-      </section>
+      <SearchBar onFilter={handleFilter} />
+      {isLoading ? (
+        <div className="flex flex-grow items-center justify-center">
+          <Loader2 className="w-8 h-8 animate-spin text-gray-500" />
+        </div>
+      ) : error ? (
+        <div className="flex flex-grow items-center justify-center">
+          <div className="text-center">
+            <p className="text-red-500 mb-2">{error}</p>
+            <button
+              onClick={() => fetchIdeas()}
+              className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+            >
+              Retry
+            </button>
+          </div>
+        </div>
+      ) : (
+        <section className="flex flex-grow p-4 space-x-4 overflow-scroll">
+          {columnData.map((column, index) => (
+            <TaskColumn
+              key={`${column.title}-${index}`}
+              title={column.title}
+              dotColor={column.dotColor}
+              tasks={column.tasks}
+              onAddTask={handleOpenCreateModal}
+            />
+          ))}
+        </section>
+      )}
 
       {isModalOpen && (
         <Modal
